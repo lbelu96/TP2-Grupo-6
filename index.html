@@ -1,0 +1,10639 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TP 2: Grupo 6</title>
+<style>
+  :root{
+    --bg:#050505;
+    --panel:#0b0b0d;
+    --line: rgba(255,255,255,0.08);
+    --violet:#9632DC;
+    --violet-soft: rgba(150,50,220,0.35);
+    --text: #e9e6ee;
+    --text-dim: #8b8894;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    overflow-x:hidden;
+    height:100%;
+  }
+
+  body{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  header{
+    padding: clamp(20px, 4vw, 40px) clamp(20px, 4vw, 48px) 8px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+
+  header h1{
+    font-size: clamp(20px, 2.4vw, 30px);
+    font-weight:600;
+    letter-spacing:0.01em;
+    margin:0;
+  }
+
+  header h1 .dot{ color:var(--violet); }
+
+  header p{
+    margin:0;
+    color:var(--text-dim);
+    font-size:13px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+
+  #grid{
+    flex:1;
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:1px;
+    background:var(--line);
+    margin: clamp(16px,3vw,32px);
+    border:1px solid var(--line);
+  }
+
+  .tile{
+    position:relative;
+    background:var(--panel);
+    aspect-ratio: 1 / 1;
+    cursor:pointer;
+    overflow:hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tile .canvas-wrap{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+  }
+
+  .tile .canvas-wrap canvas{
+    display:block !important;
+    width:100% !important;
+    height:100% !important;
+  }
+
+  .tile .veil{
+    position:absolute;
+    inset:0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.75) 100%);
+    transition: background 0.25s ease;
+  }
+
+  .tile:hover .veil, .tile:focus-visible .veil{
+    background: linear-gradient(180deg, rgba(150,50,220,0.06) 0%, rgba(0,0,0,0.55) 100%);
+  }
+
+  .tile:hover, .tile:focus-visible{
+    outline:none;
+  }
+
+  .tile::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0);
+    transition: box-shadow 0.25s ease;
+    pointer-events:none;
+  }
+
+  .tile:hover::after, .tile:focus-visible::after{
+    box-shadow: inset 0 0 0 1px var(--violet-soft);
+  }
+
+  .tile .label{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    padding: 14px 16px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    z-index:2;
+  }
+
+  .tile .num{
+    font-size:11px;
+    color:var(--text-dim);
+    letter-spacing:0.08em;
+  }
+
+  .tile .name{
+    font-size: clamp(13px, 1.6vw, 17px);
+    font-weight:600;
+    letter-spacing:0.01em;
+    text-transform:lowercase;
+  }
+
+  footer{
+    padding: 10px clamp(20px,4vw,48px) clamp(18px,3vw,28px);
+    color:var(--text-dim);
+    font-size:12px;
+    letter-spacing:0.02em;
+  }
+
+  /* ---------- Fullscreen ---------- */
+
+  #fullscreen{
+    position:fixed;
+    inset:0;
+    background:#000;
+    z-index:50;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 0.3s ease;
+  }
+
+  #fullscreen.open{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  #fs-canvas-wrap{
+    width:min(94vw, 94vh);
+    height:min(94vw, 94vh);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  #fs-canvas-wrap canvas{
+    display:block !important;
+    width:100% !important;
+    height:100% !important;
+  }
+
+  #menuBtn{
+    position:fixed;
+    top: clamp(14px,2.4vw,28px);
+    left: clamp(14px,2.4vw,28px);
+    z-index:60;
+    background: rgba(20,20,22,0.75);
+    backdrop-filter: blur(6px);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-size:13px;
+    letter-spacing:0.04em;
+    padding:10px 16px;
+    border-radius:999px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+  }
+
+  #menuBtn:hover{
+    border-color: var(--violet-soft);
+    color:#fff;
+  }
+
+  #menuBtn svg{ width:14px; height:14px; }
+
+  #fsLabel{
+    position:fixed;
+    top: clamp(14px,2.4vw,28px);
+    right: clamp(14px,2.4vw,28px);
+    z-index:60;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+  }
+
+  @media (max-width: 640px){
+    #grid{ grid-template-columns: repeat(3, 1fr); gap:1px; margin:10px; }
+    .tile .name{ font-size:12px; }
+    .tile .label{ padding:8px 9px; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <h1>TP 2: Grupo 6<span class="dot">.</span></h1>
+    <p>tocá una celda para entrar</p>
+  </header>
+
+  <div id="grid"></div>
+
+  <footer>panel interactivo &middot; piezas generativas</footer>
+
+  <div id="fullscreen">
+    <button id="menuBtn" aria-label="Volver al panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      menú
+    </button>
+    <span id="fsLabel"></span>
+    <div id="fs-canvas-wrap"></div>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<script>
+function sketch_memoria(sk) {
+let x = [300, 420, 300, 180];
+let y = [180, 300, 420, 300];
+
+let alpha = [255, 255, 255, 255];
+let alphaObjetivo = [255, 255, 255, 255];
+
+let patron = [0, 0, 0, 0];
+
+let fase = 1;
+let posicionJugador = 0;
+
+let INICIO_MEMORIA = 0;
+let MOSTRANDO_PATRON = 1;
+let ESPERANDO_JUGADOR = 2;
+let ERROR = 3;
+let PAUSA_ENTRE_FASES = 4;
+let PAUSA_REINICIO = 5;
+let GANASTE = 6;
+
+let estadoJuego = INICIO_MEMORIA;
+
+let tiempo = 0;
+let pasoPatron = 0;
+
+let botonIncorrecto = -1;
+
+let velocidadDesaparecer = 12;
+let velocidadAparecer = 6;
+
+let duracionInicioMemoria = 1000;
+
+let particulasMemoria = [];
+let cantidadParticulasMemoria = 90;
+
+let escalaMemoria = 1;
+let offsetXMemoria = 0;
+let offsetYMemoria = 0;
+
+let iniciadoFullscreen = false;
+
+
+// =====================================================
+// TIEMPO DE RESPUESTA
+// =====================================================
+
+let tiempoInicioRespuestaMemoria = 0;
+let limiteEsperaMemoria = 7000;
+
+
+// =====================================================
+// LATIDO
+// =====================================================
+
+let circuloLatidoMemoria = -1;
+let tiempoLatidoMemoria = 0;
+let duracionLatidoMemoria = 500;
+
+
+// =====================================================
+// SETUP
+// =====================================================
+
+sk.setup = function() {
+
+  sk.createCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+  calcularEscalaMemoria();
+
+  crearParticulasMemoria();
+
+  empezarJuego();
+}
+
+
+// =====================================================
+// DRAW
+// =====================================================
+
+sk.draw = function() {
+
+  sk.background(0);
+
+  calcularEscalaMemoria();
+
+  dibujarFondoMemoria();
+
+
+  sk.push();
+
+  sk.translate(
+    offsetXMemoria,
+    offsetYMemoria
+  );
+
+  sk.scale(
+    escalaMemoria
+  );
+
+
+  // ===================================================
+  // ANIMACION DE OPACIDAD
+  // ===================================================
+
+  for (
+    let i = 0;
+    i < 4;
+    i++
+  ) {
+
+    if (
+      alpha[i] <
+      alphaObjetivo[i]
+    ) {
+
+      alpha[i] +=
+        velocidadAparecer;
+
+
+      if (
+        alpha[i] >
+        alphaObjetivo[i]
+      ) {
+
+        alpha[i] =
+          alphaObjetivo[i];
+      }
+    }
+
+    else if (
+      alpha[i] >
+      alphaObjetivo[i]
+    ) {
+
+      alpha[i] -=
+        velocidadDesaparecer;
+
+
+      if (
+        alpha[i] <
+        alphaObjetivo[i]
+      ) {
+
+        alpha[i] =
+          alphaObjetivo[i];
+      }
+    }
+  }
+
+
+  // ===================================================
+  // CIRCULOS
+  // ===================================================
+
+  for (
+    let i = 0;
+    i < 4;
+    i++
+  ) {
+
+    let haciendoLatido =
+      i ===
+      circuloLatidoMemoria &&
+      sk.millis() -
+      tiempoLatidoMemoria <
+      duracionLatidoMemoria;
+
+
+    if (
+      haciendoLatido
+    ) {
+
+      let progreso =
+        (
+          sk.millis() -
+          tiempoLatidoMemoria
+        ) /
+        duracionLatidoMemoria;
+
+
+      let pulso =
+        sk.sin(
+          progreso *
+          sk.PI
+        );
+
+
+      let escalaPulso =
+        1 +
+        pulso *
+        0.18;
+
+
+      dibujarCirculoNeonMemoria(
+        x[i],
+        y[i],
+        80 *
+        escalaPulso,
+        150,
+        50,
+        220
+      );
+
+    }
+
+    else {
+
+      dibujarCirculoMemoria(
+        x[i],
+        y[i],
+        80,
+        alpha[i]
+      );
+    }
+  }
+
+
+  // ===================================================
+  // INICIO
+  // ===================================================
+
+  if (
+    estadoJuego ===
+    INICIO_MEMORIA
+  ) {
+
+    if (
+      sk.millis() -
+      tiempo >=
+      duracionInicioMemoria
+    ) {
+
+      estadoJuego =
+        MOSTRANDO_PATRON;
+
+      tiempo =
+        sk.millis();
+
+      pasoPatron = 0;
+    }
+
+
+    sk.pop();
+
+    return;
+  }
+
+
+  // ===================================================
+  // MOSTRAR PATRON
+  // ===================================================
+
+  if (
+    estadoJuego ===
+    MOSTRANDO_PATRON
+  ) {
+
+    let circulo =
+      patron[pasoPatron];
+
+
+    dibujarCirculoNeonMemoria(
+      x[circulo],
+      y[circulo],
+      80,
+      150,
+      50,
+      220
+    );
+
+
+    if (
+      sk.millis() -
+      tiempo >
+      500
+    ) {
+
+      pasoPatron++;
+
+
+      if (
+        pasoPatron <
+        fase
+      ) {
+
+        tiempo =
+          sk.millis();
+
+      }
+
+      else {
+
+        pasoPatron = 0;
+
+        posicionJugador = 0;
+
+        estadoJuego =
+          ESPERANDO_JUGADOR;
+
+
+        // Comienza a contar los 7 segundos
+
+        tiempoInicioRespuestaMemoria =
+          sk.millis();
+      }
+    }
+  }
+
+
+  // ===================================================
+  // ESPERAR AL JUGADOR
+  // ===================================================
+
+  if (
+    estadoJuego ===
+    ESPERANDO_JUGADOR
+  ) {
+
+    // Si pasan 7 segundos sin interacción,
+    // vuelve a mostrar el patrón.
+
+    if (
+      sk.millis() -
+      tiempoInicioRespuestaMemoria >=
+      limiteEsperaMemoria
+    ) {
+
+      mostrarPatronDeNuevoMemoria();
+    }
+  }
+
+
+  // ===================================================
+  // ERROR
+  // ===================================================
+
+  if (
+    estadoJuego ===
+    ERROR
+  ) {
+
+    dibujarCirculoNeonMemoria(
+      x[botonIncorrecto],
+      y[botonIncorrecto],
+      80,
+      255,
+      0,
+      0
+    );
+
+
+    if (
+      sk.millis() -
+      tiempo >
+      3000
+    ) {
+
+      estadoJuego =
+        PAUSA_REINICIO;
+
+      tiempo =
+        sk.millis();
+    }
+  }
+
+
+  // ===================================================
+  // PAUSA REINICIO
+  // ===================================================
+
+  if (
+    estadoJuego ===
+    PAUSA_REINICIO
+  ) {
+
+    if (
+      sk.millis() -
+      tiempo >
+      100
+    ) {
+
+      empezarJuego();
+    }
+  }
+
+
+  // ===================================================
+  // PAUSA ENTRE FASES
+  // ===================================================
+
+  if (
+    estadoJuego ===
+    PAUSA_ENTRE_FASES
+  ) {
+
+    if (
+      sk.millis() -
+      tiempo >
+      3000
+    ) {
+
+      prepararSiguienteFase();
+    }
+  }
+
+
+  // ===================================================
+  // GANASTE
+  // ===================================================
+
+  if (
+    estadoJuego ===
+    GANASTE
+  ) {
+
+    if (
+      sk.millis() -
+      tiempo >
+      3000
+    ) {
+
+      empezarJuego();
+    }
+  }
+
+
+  sk.pop();
+}
+
+
+// =====================================================
+// ESCALA
+// =====================================================
+
+function calcularEscalaMemoria() {
+
+  let espacioDisponible =
+    sk.min(
+      sk.width,
+      sk.height
+    );
+
+
+  escalaMemoria =
+    (
+      espacioDisponible *
+      0.90
+    ) /
+    600;
+
+
+  offsetXMemoria =
+    (
+      sk.width -
+      600 *
+      escalaMemoria
+    ) /
+    2;
+
+
+  offsetYMemoria =
+    (
+      sk.height -
+      600 *
+      escalaMemoria
+    ) /
+    2;
+}
+
+
+// =====================================================
+// PARTICULAS
+// =====================================================
+
+function crearParticulasMemoria() {
+
+  particulasMemoria = [];
+
+
+  for (
+    let i = 0;
+    i < cantidadParticulasMemoria;
+    i++
+  ) {
+
+    particulasMemoria.push({
+
+      x:
+        sk.random(sk.width),
+
+      y:
+        sk.random(sk.height),
+
+      velocidadX:
+        sk.random(
+          -0.15,
+          0.15
+        ),
+
+      velocidadY:
+        sk.random(
+          -0.15,
+          0.15
+        ),
+
+      tamano:
+        sk.random(
+          1,
+          3
+        ),
+
+      opacidad:
+        sk.random(
+          20,
+          80
+        )
+    });
+  }
+}
+
+
+function dibujarFondoMemoria() {
+
+  sk.noStroke();
+
+
+  for (
+    let particula of particulasMemoria
+  ) {
+
+    particula.x +=
+      particula.velocidadX;
+
+    particula.y +=
+      particula.velocidadY;
+
+
+    if (
+      particula.x < 0
+    ) {
+
+      particula.x =
+        sk.width;
+    }
+
+
+    if (
+      particula.x > sk.width
+    ) {
+
+      particula.x =
+        0;
+    }
+
+
+    if (
+      particula.y < 0
+    ) {
+
+      particula.y =
+        sk.height;
+    }
+
+
+    if (
+      particula.y > sk.height
+    ) {
+
+      particula.y =
+        0;
+    }
+
+
+    sk.fill(
+      150,
+      150,
+      160,
+      particula.opacidad
+    );
+
+
+    sk.ellipse(
+      particula.x,
+      particula.y,
+      particula.tamano,
+      particula.tamano
+    );
+  }
+}
+
+
+// =====================================================
+// CIRCULO NORMAL
+// =====================================================
+
+function dibujarCirculoMemoria(
+  posX,
+  posY,
+  tamano,
+  opacidad
+) {
+
+  sk.noStroke();
+
+
+  sk.fill(
+    255,
+    255,
+    255,
+    opacidad * 0.08
+  );
+
+
+  sk.ellipse(
+    posX,
+    posY,
+    tamano + 18,
+    tamano + 18
+  );
+
+
+  sk.fill(
+    255,
+    255,
+    255,
+    opacidad
+  );
+
+
+  sk.ellipse(
+    posX,
+    posY,
+    tamano,
+    tamano
+  );
+}
+
+
+// =====================================================
+// CIRCULO NEON
+// =====================================================
+
+function dibujarCirculoNeonMemoria(
+  posX,
+  posY,
+  tamano,
+  rojo,
+  verde,
+  azul
+) {
+
+  sk.noStroke();
+
+
+  sk.fill(
+    rojo,
+    verde,
+    azul,
+    25
+  );
+
+
+  sk.ellipse(
+    posX,
+    posY,
+    tamano + 60,
+    tamano + 60
+  );
+
+
+  sk.fill(
+    rojo,
+    verde,
+    azul,
+    55
+  );
+
+
+  sk.ellipse(
+    posX,
+    posY,
+    tamano + 35,
+    tamano + 35
+  );
+
+
+  sk.fill(
+    rojo,
+    verde,
+    azul,
+    100
+  );
+
+
+  sk.ellipse(
+    posX,
+    posY,
+    tamano + 15,
+    tamano + 15
+  );
+
+
+  sk.fill(
+    rojo,
+    verde,
+    azul
+  );
+
+
+  sk.ellipse(
+    posX,
+    posY,
+    tamano,
+    tamano
+  );
+}
+
+
+// =====================================================
+// PROCESAR SELECCION
+// =====================================================
+
+function procesarSeleccionMemoria(
+  posX,
+  posY
+) {
+
+  if (
+    estadoJuego !==
+    ESPERANDO_JUGADOR
+  ) {
+
+    return;
+  }
+
+
+  let escala =
+    escalaMemoria;
+
+
+  let posicionVirtualX =
+    (
+      posX -
+      offsetXMemoria
+    ) /
+    escala;
+
+
+  let posicionVirtualY =
+    (
+      posY -
+      offsetYMemoria
+    ) /
+    escala;
+
+
+  for (
+    let i = 0;
+    i < 4;
+    i++
+  ) {
+
+    let distancia =
+      sk.dist(
+        posicionVirtualX,
+        posicionVirtualY,
+        x[i],
+        y[i]
+      );
+
+
+    if (
+      distancia <
+      40
+    ) {
+
+      // Reinicia el contador cada vez
+      // que el jugador responde.
+
+      tiempoInicioRespuestaMemoria =
+        sk.millis();
+
+
+      // ---------------------------------------------
+      // RESPUESTA CORRECTA
+      // ---------------------------------------------
+
+      if (
+        i ===
+        patron[posicionJugador]
+      ) {
+
+        alphaObjetivo[i] =
+          0;
+
+
+        circuloLatidoMemoria =
+          i;
+
+
+        tiempoLatidoMemoria =
+          sk.millis();
+
+
+        posicionJugador++;
+
+
+        if (
+          posicionJugador ===
+          fase
+        ) {
+
+          if (
+            fase < 4
+          ) {
+
+            fase++;
+
+            agregarBoton();
+
+            estadoJuego =
+              PAUSA_ENTRE_FASES;
+
+            tiempo =
+              sk.millis();
+
+          }
+
+          else {
+
+            estadoJuego =
+              GANASTE;
+
+            tiempo =
+              sk.millis();
+          }
+        }
+
+      }
+
+      // ---------------------------------------------
+      // RESPUESTA INCORRECTA
+      // ---------------------------------------------
+
+      else {
+
+        botonIncorrecto =
+          i;
+
+        estadoJuego =
+          ERROR;
+
+        tiempo =
+          sk.millis();
+      }
+
+
+      return;
+    }
+  }
+}
+
+
+// =====================================================
+// MOSTRAR PATRON NUEVAMENTE
+// =====================================================
+
+function mostrarPatronDeNuevoMemoria() {
+
+  for (
+    let i = 0;
+    i < 4;
+    i++
+  ) {
+
+    alphaObjetivo[i] =
+      255;
+  }
+
+
+  posicionJugador = 0;
+
+  pasoPatron = 0;
+
+
+  estadoJuego =
+    MOSTRANDO_PATRON;
+
+
+  tiempo =
+    sk.millis();
+
+
+  circuloLatidoMemoria =
+    -1;
+
+
+  tiempoInicioRespuestaMemoria =
+    sk.millis();
+}
+
+
+// =====================================================
+// MOUSE
+// =====================================================
+
+sk.mousePressed = function() {
+
+  activarFullscreenMemoria();
+
+
+  procesarSeleccionMemoria(
+    sk.mouseX,
+    sk.mouseY
+  );
+}
+
+
+// =====================================================
+// TOUCH
+// =====================================================
+
+sk.touchStarted = function() {
+
+  activarFullscreenMemoria();
+
+
+  if (
+    sk.touches.length > 0
+  ) {
+
+    procesarSeleccionMemoria(
+      sk.touches[0].x,
+      sk.touches[0].y
+    );
+  }
+
+
+  return false;
+}
+
+
+// =====================================================
+// FULLSCREEN
+// =====================================================
+
+function activarFullscreenMemoria() {
+
+  if (
+    !iniciadoFullscreen
+  ) {
+
+    void 0;
+
+    iniciadoFullscreen =
+      true;
+  }
+}
+
+
+// =====================================================
+// TECLADO
+// =====================================================
+
+sk.keyPressed = function() {
+
+  if (
+    sk.keyCode === sk.ESCAPE
+  ) {
+
+    void 0;
+
+    iniciadoFullscreen =
+      false;
+  }
+}
+
+
+// =====================================================
+// CAMBIO DE TAMAÑO
+// =====================================================
+
+sk.windowResized = function() {
+
+  sk.resizeCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+
+  calcularEscalaMemoria();
+}
+
+
+// =====================================================
+// PATRON
+// =====================================================
+
+function agregarBoton() {
+
+  let nuevo;
+
+
+  do {
+
+    nuevo =
+      sk.floor(
+        sk.random(4)
+      );
+
+  } while (
+    estaEnPatron(nuevo)
+  );
+
+
+  patron[
+    fase - 1
+  ] =
+    nuevo;
+}
+
+
+function estaEnPatron(
+  numero
+) {
+
+  for (
+    let i = 0;
+    i < fase - 1;
+    i++
+  ) {
+
+    if (
+      patron[i] ===
+      numero
+    ) {
+
+      return true;
+    }
+  }
+
+
+  return false;
+}
+
+
+// =====================================================
+// SIGUIENTE FASE
+// =====================================================
+
+function prepararSiguienteFase() {
+
+  for (
+    let i = 0;
+    i < 4;
+    i++
+  ) {
+
+    alphaObjetivo[i] =
+      255;
+  }
+
+
+  posicionJugador = 0;
+
+  pasoPatron = 0;
+
+  circuloLatidoMemoria =
+    -1;
+
+
+  estadoJuego =
+    MOSTRANDO_PATRON;
+
+
+  tiempo =
+    sk.millis();
+}
+
+
+// =====================================================
+// EMPEZAR JUEGO
+// =====================================================
+
+function empezarJuego() {
+
+  fase = 1;
+
+  posicionJugador = 0;
+
+  pasoPatron = 0;
+
+  botonIncorrecto = -1;
+
+  circuloLatidoMemoria =
+    -1;
+
+
+  for (
+    let i = 0;
+    i < 4;
+    i++
+  ) {
+
+    alpha[i] = 0;
+
+    alphaObjetivo[i] =
+      255;
+  }
+
+
+  patron[0] =
+    sk.floor(
+      sk.random(4)
+    );
+
+
+  estadoJuego =
+    INICIO_MEMORIA;
+
+
+  tiempo =
+    sk.millis();
+
+
+  tiempoInicioRespuestaMemoria =
+    sk.millis();
+}
+}
+function sketch_herencia(sk) {
+var herenciaPadre;
+
+var herenciaHerederos = [];
+
+var herenciaParticulas = [];
+
+var herenciaParticulasFondo = [];
+
+var herenciaSeleccionado = null;
+
+var herenciaEstado = "jugando";
+
+var herenciaArrastrando = false;
+
+var herenciaTiempoEstado = 0;
+
+
+// =====================================================
+// TOUCH
+// =====================================================
+
+var herenciaTouchID = -1;
+
+var herenciaFullscreen = false;
+
+var lienzo;
+
+
+// DURACIONES
+
+var herenciaDuracionSalida = 1200;
+
+var herenciaDuracionHerencia = 1000;
+
+var herenciaDuracionNuevos = 1200;
+
+
+// TAMAÑOS
+
+var herenciaTamanoPadre = 180;
+
+var herenciaCantidadHerederos = 4;
+
+var herenciaCantidadParticulas = 35;
+
+var herenciaCantidadParticulasFondo = 100;
+
+
+// =====================================================
+// SETUP
+// =====================================================
+
+sk.setup = function() {
+
+  lienzo = sk.createCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+  lienzo.elt.style.touchAction = "none";
+
+  crearParticulasFondoHerencia();
+
+  iniciarHerencia();
+}
+
+
+// =====================================================
+// DRAW
+// =====================================================
+
+sk.draw = function() {
+
+  sk.background(0);
+
+  dibujarFondoHerencia();
+
+
+  actualizarTouchHerencia();
+
+
+  if (
+    herenciaEstado === "jugando"
+  ) {
+
+    actualizarPadreHerencia();
+
+    actualizarParticulasHerencia();
+
+    comprobarColisionParticulasHerencia();
+
+    dibujarPadreHerencia();
+
+    dibujarParticulasHerencia();
+
+    dibujarHerederosHerencia();
+  }
+
+
+  else if (
+    herenciaEstado === "salida"
+  ) {
+
+    actualizarSalidaHerencia();
+
+    dibujarPadreHerencia();
+
+    dibujarParticulasHerencia();
+
+    dibujarHerederosHerencia();
+  }
+
+
+  else if (
+    herenciaEstado === "herencia"
+  ) {
+
+    actualizarHerenciaHerencia();
+
+    dibujarPadreHerencia();
+
+    dibujarParticulasHerencia();
+
+    dibujarHerederosHerencia();
+  }
+
+
+  else if (
+    herenciaEstado === "nuevos"
+  ) {
+
+    actualizarNuevosHerederosHerencia();
+
+    dibujarPadreHerencia();
+
+    dibujarParticulasHerencia();
+
+    dibujarHerederosHerencia();
+  }
+}
+
+
+// =====================================================
+// INICIAR
+// =====================================================
+
+function iniciarHerencia() {
+
+  herenciaEstado = "jugando";
+
+  herenciaSeleccionado = null;
+
+  herenciaArrastrando = false;
+
+  herenciaTouchID = -1;
+
+  herenciaTiempoEstado = sk.millis();
+
+  crearPadreHerencia();
+
+  crearHerederosHerencia();
+}
+
+
+// =====================================================
+// PADRE
+// =====================================================
+
+function crearPadreHerencia() {
+
+  herenciaPadre = {
+
+    x: sk.width / 2,
+
+    y: 180,
+
+    tamano: herenciaTamanoPadre
+  };
+
+
+  crearParticulasDelPadre();
+}
+
+
+function crearParticulasDelPadre() {
+
+  herenciaParticulas = [];
+
+
+  for (
+    var i = 0;
+    i < herenciaCantidadParticulas;
+    i++
+  ) {
+
+    var angulo =
+      sk.random(sk.TWO_PI);
+
+
+    var distancia =
+      sk.random(
+        herenciaPadre.tamano / 2 + 15,
+        herenciaPadre.tamano / 2 + 75
+      );
+
+
+    herenciaParticulas.push({
+
+      x:
+        herenciaPadre.x +
+        sk.cos(angulo) *
+        distancia,
+
+      y:
+        herenciaPadre.y +
+        sk.sin(angulo) *
+        distancia,
+
+      angulo: angulo,
+
+      distancia: distancia,
+
+      velocidad:
+        sk.random(
+          0.005,
+          0.018
+        ),
+
+      tamano:
+        sk.random(
+          5,
+          9
+        )
+    });
+  }
+}
+
+
+function actualizarPadreHerencia() {
+
+  if (
+    herenciaPadre === null
+  ) {
+
+    return;
+  }
+
+
+  for (
+    var i = 0;
+    i < herenciaParticulas.length;
+    i++
+  ) {
+
+    var p =
+      herenciaParticulas[i];
+
+
+    p.angulo +=
+      p.velocidad;
+
+
+    p.x =
+      herenciaPadre.x +
+      sk.cos(p.angulo) *
+      p.distancia;
+
+
+    p.y =
+      herenciaPadre.y +
+      sk.sin(p.angulo) *
+      p.distancia;
+  }
+}
+
+
+function actualizarParticulasHerencia() {
+
+  if (
+    herenciaPadre === null
+  ) {
+
+    return;
+  }
+
+
+  for (
+    var i = 0;
+    i < herenciaParticulas.length;
+    i++
+  ) {
+
+    var p =
+      herenciaParticulas[i];
+
+
+    p.angulo +=
+      p.velocidad;
+
+
+    p.x =
+      herenciaPadre.x +
+      sk.cos(p.angulo) *
+      p.distancia;
+
+
+    p.y =
+      herenciaPadre.y +
+      sk.sin(p.angulo) *
+      p.distancia;
+  }
+}
+
+
+// =====================================================
+// HEREDEROS
+// =====================================================
+
+function crearHerederosHerencia() {
+
+  herenciaHerederos = [];
+
+
+  var posiciones = [
+
+    {
+      x: sk.width * 0.18,
+      y: sk.height * 0.85
+    },
+
+    {
+      x: sk.width * 0.40,
+      y: sk.height * 0.90
+    },
+
+    {
+      x: sk.width * 0.60,
+      y: sk.height * 0.90
+    },
+
+    {
+      x: sk.width * 0.82,
+      y: sk.height * 0.85
+    }
+
+  ];
+
+
+  for (
+    var i = 0;
+    i < herenciaCantidadHerederos;
+    i++
+  ) {
+
+    herenciaHerederos.push({
+
+      x:
+        posiciones[i].x,
+
+      y:
+        posiciones[i].y,
+
+      posicionFinalX:
+        posiciones[i].x,
+
+      posicionFinalY:
+        posiciones[i].y,
+
+      yInicial:
+        sk.height + 100,
+
+      tamano:
+        sk.random(
+          40,
+          58
+        ),
+
+      escala: 1,
+
+      opacidad: 255,
+
+      rojo: 150,
+
+      verde: 150,
+
+      azul: 155,
+
+      elegido: false,
+
+      nuevo: false
+    });
+  }
+}
+
+
+// =====================================================
+// COLISION CON PARTICULAS
+// =====================================================
+
+function comprobarColisionParticulasHerencia() {
+
+  if (
+    herenciaSeleccionado === null
+  ) {
+
+    return;
+  }
+
+
+  if (
+    herenciaEstado !== "jugando"
+  ) {
+
+    return;
+  }
+
+
+  for (
+    var i = 0;
+    i < herenciaParticulas.length;
+    i++
+  ) {
+
+    var p =
+      herenciaParticulas[i];
+
+
+    var distancia =
+      sk.dist(
+        herenciaSeleccionado.x,
+        herenciaSeleccionado.y,
+        p.x,
+        p.y
+      );
+
+
+    if (
+      distancia <
+      herenciaSeleccionado.tamano *
+      herenciaSeleccionado.escala /
+      2 +
+      p.tamano
+    ) {
+
+      comenzarSalidaHerencia();
+
+      return;
+    }
+  }
+}
+
+
+// =====================================================
+// COMIENZA SALIDA
+// =====================================================
+
+function comenzarSalidaHerencia() {
+
+  herenciaEstado =
+    "salida";
+
+
+  herenciaTiempoEstado =
+    sk.millis();
+
+
+  herenciaSeleccionado.elegido =
+    true;
+
+
+  herenciaArrastrando =
+    false;
+
+
+  herenciaTouchID =
+    -1;
+}
+
+
+// =====================================================
+// ETAPA 1
+// REY ARRIBA / OTROS A LOS LADOS
+// =====================================================
+
+function actualizarSalidaHerencia() {
+
+  var progreso =
+    (
+      sk.millis() -
+      herenciaTiempoEstado
+    ) /
+    herenciaDuracionSalida;
+
+
+  progreso =
+    sk.constrain(
+      progreso,
+      0,
+      1
+    );
+
+
+  var suave =
+    progreso *
+    progreso *
+    (3 - 2 * progreso);
+
+
+  herenciaPadre.y =
+    sk.lerp(
+      180,
+      -220,
+      suave
+    );
+
+
+  for (
+    var i = 0;
+    i < herenciaHerederos.length;
+    i++
+  ) {
+
+    var h =
+      herenciaHerederos[i];
+
+
+    if (
+      h ===
+      herenciaSeleccionado
+    ) {
+
+      continue;
+    }
+
+
+    if (
+      i < 2
+    ) {
+
+      h.x =
+        sk.lerp(
+          h.x,
+          -180,
+          suave
+        );
+
+    }
+
+    else {
+
+      h.x =
+        sk.lerp(
+          h.x,
+          sk.width + 180,
+          suave
+        );
+    }
+  }
+
+
+  if (
+    progreso >= 1
+  ) {
+
+    herenciaEstado =
+      "herencia";
+
+
+    herenciaTiempoEstado =
+      sk.millis();
+  }
+}
+
+
+// =====================================================
+// ETAPA 2
+// EL ELEGIDO SE CONVIERTE
+// =====================================================
+
+function actualizarHerenciaHerencia() {
+
+  var progreso =
+    (
+      sk.millis() -
+      herenciaTiempoEstado
+    ) /
+    herenciaDuracionHerencia;
+
+
+  progreso =
+    sk.constrain(
+      progreso,
+      0,
+      1
+    );
+
+
+  var suave =
+    progreso *
+    progreso *
+    (3 - 2 * progreso);
+
+
+  var elegido =
+    herenciaSeleccionado;
+
+
+  elegido.x =
+    sk.lerp(
+      elegido.x,
+      sk.width / 2,
+      suave
+    );
+
+
+  elegido.y =
+    sk.lerp(
+      elegido.y,
+      180,
+      suave
+    );
+
+
+  elegido.escala =
+    sk.lerp(
+      1,
+      herenciaTamanoPadre /
+      elegido.tamano,
+      suave
+    );
+
+
+  elegido.rojo =
+    sk.lerp(
+      150,
+      150,
+      suave
+    );
+
+
+  elegido.verde =
+    sk.lerp(
+      150,
+      50,
+      suave
+    );
+
+
+  elegido.azul =
+    sk.lerp(
+      155,
+      220,
+      suave
+    );
+
+
+  if (
+    progreso >= 1
+  ) {
+
+    herenciaPadre = {
+
+      x: sk.width / 2,
+
+      y: 180,
+
+      tamano: herenciaTamanoPadre
+    };
+
+
+    crearParticulasDelPadre();
+
+
+    herenciaEstado =
+      "nuevos";
+
+
+    herenciaTiempoEstado =
+      sk.millis();
+
+
+    prepararNuevosHerederosHerencia();
+  }
+}
+
+
+// =====================================================
+// ETAPA 3
+// NUEVOS HEREDEROS DESDE ABAJO
+// =====================================================
+
+function prepararNuevosHerederosHerencia() {
+
+  var posiciones = [
+
+    {
+      x: sk.width * 0.18,
+      y: sk.height * 0.85
+    },
+
+    {
+      x: sk.width * 0.40,
+      y: sk.height * 0.90
+    },
+
+    {
+      x: sk.width * 0.60,
+      y: sk.height * 0.90
+    },
+
+    {
+      x: sk.width * 0.82,
+      y: sk.height * 0.85
+    }
+
+  ];
+
+
+  herenciaHerederos = [];
+
+
+  for (
+    var i = 0;
+    i < herenciaCantidadHerederos;
+    i++
+  ) {
+
+    herenciaHerederos.push({
+
+      x:
+        posiciones[i].x,
+
+      y:
+        sk.height + 100,
+
+      posicionFinalX:
+        posiciones[i].x,
+
+      posicionFinalY:
+        posiciones[i].y,
+
+      tamano:
+        sk.random(
+          40,
+          58
+        ),
+
+      escala: 1,
+
+      opacidad: 255,
+
+      rojo: 150,
+
+      verde: 150,
+
+      azul: 155,
+
+      elegido: false,
+
+      nuevo: true
+    });
+  }
+}
+
+
+function actualizarNuevosHerederosHerencia() {
+
+  var progreso =
+    (
+      sk.millis() -
+      herenciaTiempoEstado
+    ) /
+    herenciaDuracionNuevos;
+
+
+  progreso =
+    sk.constrain(
+      progreso,
+      0,
+      1
+    );
+
+
+  var suave =
+    progreso *
+    progreso *
+    (3 - 2 * progreso);
+
+
+  for (
+    var i = 0;
+    i < herenciaHerederos.length;
+    i++
+  ) {
+
+    var h =
+      herenciaHerederos[i];
+
+
+    h.x =
+      sk.lerp(
+        h.x,
+        h.posicionFinalX,
+        suave
+      );
+
+
+    h.y =
+      sk.lerp(
+        h.y,
+        h.posicionFinalY,
+        suave
+      );
+  }
+
+
+  if (
+    progreso >= 1
+  ) {
+
+    herenciaEstado =
+      "jugando";
+  }
+}
+
+
+// =====================================================
+// DIBUJAR PADRE
+// =====================================================
+
+function dibujarPadreHerencia() {
+
+  if (
+    herenciaPadre === null ||
+    herenciaPadre.tamano <= 0
+  ) {
+
+    return;
+  }
+
+
+  sk.noStroke();
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    18
+  );
+
+
+  sk.ellipse(
+    herenciaPadre.x,
+    herenciaPadre.y,
+    herenciaPadre.tamano + 65,
+    herenciaPadre.tamano + 65
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    40
+  );
+
+
+  sk.ellipse(
+    herenciaPadre.x,
+    herenciaPadre.y,
+    herenciaPadre.tamano + 32,
+    herenciaPadre.tamano + 32
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220
+  );
+
+
+  sk.ellipse(
+    herenciaPadre.x,
+    herenciaPadre.y,
+    herenciaPadre.tamano,
+    herenciaPadre.tamano
+  );
+}
+
+
+// =====================================================
+// PARTICULAS VIOLETAS
+// =====================================================
+
+function dibujarParticulasHerencia() {
+
+  sk.noStroke();
+
+
+  for (
+    var i = 0;
+    i < herenciaParticulas.length;
+    i++
+  ) {
+
+    var p =
+      herenciaParticulas[i];
+
+
+    sk.fill(
+      150,
+      50,
+      220
+    );
+
+
+    sk.ellipse(
+      p.x,
+      p.y,
+      p.tamano,
+      p.tamano
+    );
+  }
+}
+
+
+// =====================================================
+// HEREDEROS
+// =====================================================
+
+function dibujarHerederosHerencia() {
+
+  for (
+    var i = 0;
+    i < herenciaHerederos.length;
+    i++
+  ) {
+
+    var h =
+      herenciaHerederos[i];
+
+
+    if (
+      h.opacidad <= 0
+    ) {
+
+      continue;
+    }
+
+
+    var tamano =
+      h.tamano *
+      h.escala;
+
+
+    sk.noStroke();
+
+
+    // AURA
+
+    sk.fill(
+      h.rojo,
+      h.verde,
+      h.azul,
+      18 *
+      (
+        h.opacidad / 255
+      )
+    );
+
+
+    sk.ellipse(
+      h.x,
+      h.y,
+      tamano + 30,
+      tamano + 30
+    );
+
+
+    // CUERPO
+
+    sk.fill(
+      h.rojo,
+      h.verde,
+      h.azul,
+      h.opacidad
+    );
+
+
+    sk.ellipse(
+      h.x,
+      h.y,
+      tamano,
+      tamano
+    );
+  }
+}
+
+
+// =====================================================
+// FONDO
+// =====================================================
+
+function crearParticulasFondoHerencia() {
+
+  herenciaParticulasFondo = [];
+
+
+  for (
+    var i = 0;
+    i < herenciaCantidadParticulasFondo;
+    i++
+  ) {
+
+    herenciaParticulasFondo.push({
+
+      x: sk.random(sk.width),
+
+      y: sk.random(sk.height),
+
+      vx: sk.random(
+        -0.1,
+        0.1
+      ),
+
+      vy: sk.random(
+        -0.1,
+        0.1
+      ),
+
+      tamano: sk.random(
+        1,
+        3
+      ),
+
+      opacidad: sk.random(
+        15,
+        50
+      )
+    });
+  }
+}
+
+
+function dibujarFondoHerencia() {
+
+  sk.noStroke();
+
+
+  for (
+    var i = 0;
+    i < herenciaParticulasFondo.length;
+    i++
+  ) {
+
+    var p =
+      herenciaParticulasFondo[i];
+
+
+    p.x += p.vx;
+
+    p.y += p.vy;
+
+
+    if (
+      p.x < 0
+    ) {
+
+      p.x = sk.width;
+    }
+
+
+    if (
+      p.x > sk.width
+    ) {
+
+      p.x = 0;
+    }
+
+
+    if (
+      p.y < 0
+    ) {
+
+      p.y = sk.height;
+    }
+
+
+    if (
+      p.y > sk.height
+    ) {
+
+      p.y = 0;
+    }
+
+
+    sk.fill(
+      150,
+      150,
+      160,
+      p.opacidad
+    );
+
+
+    sk.ellipse(
+      p.x,
+      p.y,
+      p.tamano,
+      p.tamano
+    );
+  }
+}
+
+
+// =====================================================
+// INTERACCION TOUCH
+// =====================================================
+
+function actualizarTouchHerencia() {
+
+  if (
+    sk.touches.length === 0
+  ) {
+
+    herenciaArrastrando = false;
+
+    herenciaTouchID = -1;
+
+    return;
+  }
+
+
+  // ---------------------------------------------------
+  // SEGUIR ARRASTRANDO
+  // ---------------------------------------------------
+
+  if (
+    herenciaArrastrando &&
+    herenciaSeleccionado !== null &&
+    herenciaTouchID !== -1
+  ) {
+
+    for (
+      var i = 0;
+      i < sk.touches.length;
+      i++
+    ) {
+
+      if (
+        sk.touches[i].id ===
+        herenciaTouchID
+      ) {
+
+        herenciaSeleccionado.x =
+          sk.touches[i].x;
+
+        herenciaSeleccionado.y =
+          sk.touches[i].y;
+
+        return;
+      }
+    }
+
+
+    herenciaArrastrando = false;
+
+    herenciaTouchID = -1;
+
+    return;
+  }
+
+
+  // ---------------------------------------------------
+  // BUSCAR UN HEREDERO
+  // ---------------------------------------------------
+
+  if (
+    herenciaEstado !== "jugando"
+  ) {
+
+    return;
+  }
+
+
+  for (
+    var i =
+      herenciaHerederos.length - 1;
+
+    i >= 0;
+
+    i--
+  ) {
+
+    var h =
+      herenciaHerederos[i];
+
+
+    for (
+      var j = 0;
+      j < sk.touches.length;
+      j++
+    ) {
+
+      var distancia =
+        sk.dist(
+          sk.touches[j].x,
+          sk.touches[j].y,
+          h.x,
+          h.y
+        );
+
+
+      if (
+        distancia <
+        h.tamano *
+        h.escala /
+        2
+      ) {
+
+        herenciaSeleccionado =
+          h;
+
+        herenciaArrastrando =
+          true;
+
+        herenciaTouchID =
+          sk.touches[j].id;
+
+        return;
+      }
+    }
+  }
+}
+
+
+// =====================================================
+// TOUCH STARTED
+// =====================================================
+
+sk.touchStarted = function() {
+
+  activarFullscreenHerencia();
+
+  return false;
+}
+
+
+// =====================================================
+// TOUCH MOVED
+// =====================================================
+
+sk.touchMoved = function() {
+
+  return false;
+}
+
+
+// =====================================================
+// TOUCH ENDED
+// =====================================================
+
+sk.touchEnded = function() {
+
+  if (
+    sk.touches.length === 0
+  ) {
+
+    herenciaArrastrando = false;
+
+    herenciaTouchID = -1;
+
+  }
+
+  return false;
+}
+
+
+// =====================================================
+// FULLSCREEN
+// =====================================================
+
+function activarFullscreenHerencia() {
+
+  if (
+    !herenciaFullscreen
+  ) {
+
+    void 0;
+
+    herenciaFullscreen = true;
+
+  }
+}
+
+
+// =====================================================
+// REDIMENSIONAR
+// =====================================================
+
+sk.windowResized = function() {
+
+  sk.resizeCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+
+  crearParticulasFondoHerencia();
+
+
+  if (
+    herenciaEstado === "jugando"
+  ) {
+
+    var posiciones = [
+
+      {
+        x: sk.width * 0.18,
+        y: sk.height * 0.85
+      },
+
+      {
+        x: sk.width * 0.40,
+        y: sk.height * 0.90
+      },
+
+      {
+        x: sk.width * 0.60,
+        y: sk.height * 0.90
+      },
+
+      {
+        x: sk.width * 0.82,
+        y: sk.height * 0.85
+      }
+
+    ];
+
+
+    for (
+      var i = 0;
+      i < herenciaHerederos.length;
+      i++
+    ) {
+
+      herenciaHerederos[i].x =
+        posiciones[i].x;
+
+      herenciaHerederos[i].y =
+        posiciones[i].y;
+
+      herenciaHerederos[i].posicionFinalX =
+        posiciones[i].x;
+
+      herenciaHerederos[i].posicionFinalY =
+        posiciones[i].y;
+    }
+  }
+}
+}
+function sketch_caducidad(sk) {
+var canvasCaducidad;
+
+var caducidadColorVioleta = [150, 50, 220];
+
+var caducidadOpacidad = 255;
+
+var caducidadVelocidadDesgaste = 1.00;
+var caducidadVelocidadRecuperacion = 0.50;
+
+var caducidadAumentoDesgaste = 0.05;
+var caducidadReduccionRecuperacion = 0.005;
+
+var caducidadClickAnterior = false;
+
+var caducidadEstado = 0;
+
+var caducidadTiempoGris = 2500;
+var caducidadTiempoInicioGris = 0;
+
+var caducidadOpacidadVioletaNuevo = 0;
+
+var caducidadTiempoRadar = 0;
+var caducidadIntervaloRadar = 1000;
+var caducidadRadioRadar = 220;
+
+var caducidadDuracionLatidoRojo = 4000;
+
+var caducidadOpacidadGris = 255;
+
+var caducidadParticulas = [];
+var caducidadCantidadParticulas = 90;
+
+var caducidadTocando = false;
+
+var caducidadFullscreen = false;
+
+
+// ---------------------------------------------------------
+// SETUP
+// ---------------------------------------------------------
+
+sk.setup = function() {
+
+  canvasCaducidad = sk.createCanvas(_anchoVentana(sk), _altoVentana(sk));
+
+  canvasCaducidad.elt.style.touchAction = "none";
+
+  crearParticulasCaducidad();
+
+  iniciarCaducidad();
+}
+
+
+// ---------------------------------------------------------
+// INICIAR / REINICIAR
+// ---------------------------------------------------------
+
+function iniciarCaducidad() {
+
+  caducidadOpacidad = 255;
+
+  caducidadVelocidadDesgaste = 1.00;
+
+  caducidadVelocidadRecuperacion = 0.50;
+
+  caducidadClickAnterior = false;
+
+  caducidadEstado = 0;
+
+  caducidadOpacidadVioletaNuevo = 255;
+
+  caducidadOpacidadGris = 255;
+
+  caducidadTiempoRadar = sk.millis();
+
+  caducidadIntervaloRadar = 1000;
+
+  caducidadRadioRadar = 220;
+
+  caducidadTocando = false;
+}
+
+
+// ---------------------------------------------------------
+// DRAW
+// ---------------------------------------------------------
+
+sk.draw = function() {
+
+  sk.background(0);
+
+  dibujarParticulasCaducidad();
+
+
+  // -------------------------------------------------------
+  // ACTUALIZAR TOUCH
+  // -------------------------------------------------------
+
+  actualizarTouchCaducidad();
+
+
+  // -------------------------------------------------------
+  // ESTADO 0
+  // CÍRCULO VIOLETA DESGASTÁNDOSE
+  // -------------------------------------------------------
+
+  if (caducidadEstado === 0) {
+
+    dibujarCirculoGrisCaducidad();
+
+    actualizarCirculoCaducidad();
+
+    actualizarRadarVioletaCaducidad();
+
+    dibujarRadarVioletaCaducidad();
+
+    dibujarCirculoVioletaCaducidad();
+  }
+
+
+  // -------------------------------------------------------
+  // ESTADO 1
+  // LATIDO / RADAR ROJO
+  // -------------------------------------------------------
+
+  else if (caducidadEstado === 1) {
+
+    dibujarCirculoGrisCaducidad();
+
+    dibujarRadarRojoCaducidad();
+
+
+    if (
+      sk.millis() - caducidadTiempoRadar >=
+      caducidadDuracionLatidoRojo
+    ) {
+
+      caducidadEstado = 2;
+
+      caducidadTiempoInicioGris = sk.millis();
+
+      caducidadOpacidadGris = 255;
+    }
+  }
+
+
+  // -------------------------------------------------------
+  // ESTADO 2
+  // CÍRCULO GRIS DESAPARECE
+  // -------------------------------------------------------
+
+  else if (caducidadEstado === 2) {
+
+    dibujarCirculoGrisDesvaneciendose();
+
+    caducidadOpacidadGris -= 4;
+
+
+    if (caducidadOpacidadGris <= 0) {
+
+      caducidadOpacidadGris = 0;
+
+      caducidadEstado = 3;
+
+      caducidadOpacidadVioletaNuevo = 0;
+    }
+  }
+
+
+  // -------------------------------------------------------
+  // ESTADO 3
+  // NUEVO CÍRCULO VIOLETA APARECE
+  // -------------------------------------------------------
+
+  else if (caducidadEstado === 3) {
+
+    dibujarCirculoVioletaNuevoCaducidad();
+
+    caducidadOpacidadVioletaNuevo += 7;
+
+
+    if (caducidadOpacidadVioletaNuevo >= 255) {
+
+      caducidadOpacidadVioletaNuevo = 255;
+
+      caducidadOpacidad = 255;
+
+      caducidadVelocidadDesgaste = 1.00;
+
+      caducidadVelocidadRecuperacion = 0.50;
+
+      caducidadClickAnterior = false;
+
+      caducidadEstado = 4;
+
+      caducidadOpacidadGris = 0;
+    }
+  }
+
+
+  // -------------------------------------------------------
+  // ESTADO 4
+  // CÍRCULO GRIS REAPARECE
+  // -------------------------------------------------------
+
+  else if (caducidadEstado === 4) {
+
+    dibujarCirculoVioletaNuevoCaducidad();
+
+    dibujarCirculoGrisReapareciendo();
+
+    caducidadOpacidadGris += 7;
+
+
+    if (caducidadOpacidadGris >= 255) {
+
+      caducidadOpacidadGris = 255;
+
+      caducidadEstado = 0;
+
+      caducidadTiempoRadar = sk.millis();
+
+      caducidadIntervaloRadar = 1000;
+
+      caducidadRadioRadar = 220;
+    }
+  }
+}
+
+
+// ---------------------------------------------------------
+// DETECTAR DEDO
+// ---------------------------------------------------------
+
+function actualizarTouchCaducidad() {
+
+  if (caducidadEstado !== 0) {
+
+    caducidadTocando = false;
+
+    return;
+  }
+
+
+  var encontrado = false;
+
+  var radioTouch =
+    sk.min(sk.width, sk.height) * 0.18;
+
+
+  // -------------------------------------------------------
+  // REVISAMOS TODOS LOS DEDOS QUE ESTÉN EN PANTALLA
+  // -------------------------------------------------------
+
+  for (var i = 0; i < sk.touches.length; i++) {
+
+    var distancia = sk.dist(
+      sk.touches[i].x,
+      sk.touches[i].y,
+      sk.width / 2,
+      sk.height / 2
+    );
+
+
+    if (distancia <= radioTouch) {
+
+      encontrado = true;
+
+      break;
+    }
+  }
+
+
+  // -------------------------------------------------------
+  // SI HAY UN DEDO SOBRE EL CÍRCULO
+  // -------------------------------------------------------
+
+  if (encontrado) {
+
+    caducidadTocando = true;
+  }
+
+  else {
+
+    caducidadTocando = false;
+  }
+}
+
+
+// ---------------------------------------------------------
+// ACTUALIZAR CÍRCULO
+// ---------------------------------------------------------
+
+function actualizarCirculoCaducidad() {
+
+  var tocandoAhora =
+    caducidadTocando;
+
+
+  // -------------------------------------------------------
+  // NUEVA INTERACCIÓN
+  // -------------------------------------------------------
+
+  if (
+    tocandoAhora &&
+    !caducidadClickAnterior
+  ) {
+
+    caducidadVelocidadDesgaste +=
+      caducidadAumentoDesgaste;
+
+
+    caducidadVelocidadRecuperacion =
+      sk.max(
+        caducidadVelocidadRecuperacion -
+        caducidadReduccionRecuperacion,
+        0.005
+      );
+  }
+
+
+  caducidadClickAnterior =
+    tocandoAhora;
+
+
+  // -------------------------------------------------------
+  // RECUPERACIÓN
+  // -------------------------------------------------------
+
+  if (tocandoAhora) {
+
+    caducidadOpacidad +=
+      caducidadVelocidadRecuperacion;
+  }
+
+
+  // -------------------------------------------------------
+  // DESGASTE
+  // -------------------------------------------------------
+
+  else {
+
+    caducidadOpacidad -=
+      caducidadVelocidadDesgaste;
+  }
+
+
+  caducidadOpacidad =
+    sk.constrain(
+      caducidadOpacidad,
+      0,
+      255
+    );
+
+
+  // -------------------------------------------------------
+  // CÍRCULO COMPLETAMENTE DESGASTADO
+  // -------------------------------------------------------
+
+  if (caducidadOpacidad <= 0) {
+
+    caducidadOpacidad = 0;
+
+    caducidadEstado = 1;
+
+    caducidadTiempoRadar = sk.millis();
+
+    caducidadRadioRadar = 220;
+
+    caducidadClickAnterior = false;
+
+    caducidadTocando = false;
+  }
+}
+
+
+// ---------------------------------------------------------
+// RADAR VIOLETA
+// ---------------------------------------------------------
+
+function actualizarRadarVioletaCaducidad() {
+
+  var desgaste =
+    1 - caducidadOpacidad / 255;
+
+
+  caducidadIntervaloRadar =
+    sk.lerp(
+      1000,
+      180,
+      desgaste
+    );
+
+
+  if (
+    sk.millis() - caducidadTiempoRadar >=
+    caducidadIntervaloRadar
+  ) {
+
+    caducidadTiempoRadar = sk.millis();
+
+    caducidadRadioRadar = 220;
+  }
+
+
+  caducidadRadioRadar += 5;
+}
+
+
+// ---------------------------------------------------------
+// DIBUJAR RADAR VIOLETA
+// ---------------------------------------------------------
+
+function dibujarRadarVioletaCaducidad() {
+
+  var progreso =
+    sk.constrain(
+      sk.map(
+        caducidadRadioRadar,
+        220,
+        420,
+        0,
+        1
+      ),
+      0,
+      1
+    );
+
+
+  var opacidad =
+    caducidadOpacidad *
+    (1 - progreso);
+
+
+  sk.noFill();
+
+  sk.stroke(
+    caducidadColorVioleta[0],
+    caducidadColorVioleta[1],
+    caducidadColorVioleta[2],
+    opacidad
+  );
+
+  sk.strokeWeight(5);
+
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    caducidadRadioRadar,
+    caducidadRadioRadar
+  );
+
+
+  sk.noStroke();
+}
+
+
+// ---------------------------------------------------------
+// CÍRCULO GRIS
+// ---------------------------------------------------------
+
+function dibujarCirculoGrisCaducidad() {
+
+  sk.noStroke();
+
+  sk.fill(
+    150,
+    150,
+    155,
+    caducidadOpacidadGris
+  );
+
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    220,
+    220
+  );
+}
+
+
+function dibujarCirculoGrisDesvaneciendose() {
+
+  sk.noStroke();
+
+  sk.fill(
+    150,
+    150,
+    155,
+    caducidadOpacidadGris
+  );
+
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    220,
+    220
+  );
+}
+
+
+function dibujarCirculoGrisReapareciendo() {
+
+  sk.noStroke();
+
+  sk.fill(
+    150,
+    150,
+    155,
+    caducidadOpacidadGris
+  );
+
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    220,
+    220
+  );
+}
+
+
+// ---------------------------------------------------------
+// CÍRCULO VIOLETA
+// ---------------------------------------------------------
+
+function dibujarCirculoVioletaCaducidad() {
+
+  var opacidad =
+    caducidadOpacidad;
+
+
+  sk.noStroke();
+
+
+  // Aura exterior
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad * 0.06
+  );
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    290,
+    290
+  );
+
+
+  // Aura intermedia
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad * 0.14
+  );
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    255,
+    255
+  );
+
+
+  // Aura cercana
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad * 0.25
+  );
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    235,
+    235
+  );
+
+
+  // Círculo principal
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad
+  );
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    220,
+    220
+  );
+}
+
+
+// ---------------------------------------------------------
+// NUEVO CÍRCULO VIOLETA
+// ---------------------------------------------------------
+
+function dibujarCirculoVioletaNuevoCaducidad() {
+
+  var opacidad =
+    caducidadOpacidadVioletaNuevo;
+
+
+  sk.noStroke();
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad * 0.06
+  );
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    290,
+    290
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad * 0.14
+  );
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    255,
+    255
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad * 0.25
+  );
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    235,
+    235
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad
+  );
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    220,
+    220
+  );
+}
+
+
+// ---------------------------------------------------------
+// RADAR ROJO FINAL
+// ---------------------------------------------------------
+
+function dibujarRadarRojoCaducidad() {
+
+  var progreso =
+    sk.constrain(
+      (
+        sk.millis() -
+        caducidadTiempoRadar
+      ) /
+      caducidadDuracionLatidoRojo,
+      0,
+      1
+    );
+
+
+  var onda =
+    progreso *
+    progreso *
+    (3 - 2 * progreso);
+
+
+  var radio =
+    sk.lerp(
+      220,
+      sk.max(sk.width, sk.height) * 1.15,
+      onda
+    );
+
+
+  var opacidad;
+
+
+  if (progreso < 0.15) {
+
+    opacidad =
+      sk.map(
+        progreso,
+        0,
+        0.15,
+        0,
+        255
+      );
+  }
+
+  else {
+
+    opacidad =
+      sk.map(
+        progreso,
+        0.15,
+        1,
+        255,
+        0
+      );
+  }
+
+
+  sk.noFill();
+
+  sk.stroke(
+    255,
+    0,
+    0,
+    opacidad
+  );
+
+  sk.strokeWeight(6);
+
+
+  sk.ellipse(
+    sk.width / 2,
+    sk.height / 2,
+    radio,
+    radio
+  );
+
+
+  sk.noStroke();
+}
+
+
+// ---------------------------------------------------------
+// CREAR PARTÍCULAS
+// ---------------------------------------------------------
+
+function crearParticulasCaducidad() {
+
+  caducidadParticulas = [];
+
+
+  for (
+    var i = 0;
+    i < caducidadCantidadParticulas;
+    i++
+  ) {
+
+    caducidadParticulas.push({
+
+      x: sk.random(sk.width),
+
+      y: sk.random(sk.height),
+
+      vx: sk.random(-0.15, 0.15),
+
+      vy: sk.random(-0.15, 0.15),
+
+      tamano: sk.random(1, 3),
+
+      opacidad: sk.random(15, 50)
+    });
+  }
+}
+
+
+// ---------------------------------------------------------
+// DIBUJAR PARTÍCULAS
+// ---------------------------------------------------------
+
+function dibujarParticulasCaducidad() {
+
+  sk.noStroke();
+
+
+  for (
+    var i = 0;
+    i < caducidadParticulas.length;
+    i++
+  ) {
+
+    var p =
+      caducidadParticulas[i];
+
+
+    p.x += p.vx;
+
+    p.y += p.vy;
+
+
+    if (p.x < 0) {
+
+      p.x = sk.width;
+    }
+
+
+    if (p.x > sk.width) {
+
+      p.x = 0;
+    }
+
+
+    if (p.y < 0) {
+
+      p.y = sk.height;
+    }
+
+
+    if (p.y > sk.height) {
+
+      p.y = 0;
+    }
+
+
+    sk.fill(
+      150,
+      150,
+      160,
+      p.opacidad
+    );
+
+
+    sk.ellipse(
+      p.x,
+      p.y,
+      p.tamano,
+      p.tamano
+    );
+  }
+}
+
+
+// ---------------------------------------------------------
+// TOUCH STARTED
+// ---------------------------------------------------------
+
+sk.touchStarted = function() {
+
+  activarFullscreenCaducidad();
+
+  return false;
+}
+
+
+// ---------------------------------------------------------
+// TOUCH MOVED
+// ---------------------------------------------------------
+
+sk.touchMoved = function() {
+
+  return false;
+}
+
+
+// ---------------------------------------------------------
+// TOUCH ENDED
+// ---------------------------------------------------------
+
+sk.touchEnded = function() {
+
+  return false;
+}
+
+
+// ---------------------------------------------------------
+// FULLSCREEN
+// ---------------------------------------------------------
+
+function activarFullscreenCaducidad() {
+
+  if (!caducidadFullscreen) {
+
+    void 0;
+
+    caducidadFullscreen = true;
+  }
+}
+
+
+// ---------------------------------------------------------
+// CAMBIO DE TAMAÑO
+// ---------------------------------------------------------
+
+sk.windowResized = function() {
+
+  sk.resizeCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+  crearParticulasCaducidad();
+}
+}
+function sketch_identidad(sk) {
+var identidadJugadorX = 0;
+var identidadJugadorY = 0;
+var identidadJugadorTamano = 60;
+
+var identidadCantidadHuecos = 30;
+
+var identidadHuecosX = [];
+var identidadHuecosY = [];
+var identidadHuecosTamano = [];
+
+var identidadHuecoCorrecto = 0;
+
+var identidadArrastrando = false;
+var identidadTiempoTitileo = 0;
+
+var identidadCompletado = false;
+var identidadVerdeFinal = 0;
+
+var identidadParticulas = [];
+var identidadCantidadParticulas = 110;
+
+var identidadFullscreen = false;
+
+
+// =====================================================
+// SETUP
+// =====================================================
+
+sk.setup = function() {
+
+  sk.createCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+  crearParticulasIdentidad();
+
+  iniciarIdentidad();
+}
+
+
+// =====================================================
+// DRAW
+// =====================================================
+
+sk.draw = function() {
+
+  sk.background(0);
+
+  actualizarParticulasIdentidad();
+
+  dibujarParticulasIdentidad();
+
+
+  // ===================================================
+  // JUEGO
+  // ===================================================
+
+  if (!identidadCompletado) {
+
+    dibujarEscenarioIdentidad();
+
+
+    // -----------------------------------------------
+    // CALCULAR DISTANCIA AL HUECO CORRECTO
+    // -----------------------------------------------
+
+    var distancia = sk.dist(
+      identidadJugadorX,
+      identidadJugadorY,
+      identidadHuecosX[
+        identidadHuecoCorrecto
+      ],
+      identidadHuecosY[
+        identidadHuecoCorrecto
+      ]
+    );
+
+
+    // -----------------------------------------------
+    // VELOCIDAD DEL TITILEO
+    // -----------------------------------------------
+
+    var distanciaMaxima =
+      sk.max(
+        sk.width,
+        sk.height
+      );
+
+
+    var velocidadTitileo = sk.map(
+      distancia,
+      distanciaMaxima,
+      0,
+      0.03,
+      0.45
+    );
+
+
+    velocidadTitileo = sk.constrain(
+      velocidadTitileo,
+      0.03,
+      0.45
+    );
+
+
+    identidadTiempoTitileo +=
+      velocidadTitileo;
+
+
+    var opacidad = sk.map(
+      sk.sin(
+        identidadTiempoTitileo
+      ),
+      -1,
+      1,
+      80,
+      255
+    );
+
+
+    // -----------------------------------------------
+    // JUGADOR
+    // -----------------------------------------------
+
+    dibujarJugadorIdentidad(
+      identidadJugadorX,
+      identidadJugadorY,
+      identidadJugadorTamano,
+      opacidad
+    );
+
+
+    // -----------------------------------------------
+    // COMPROBAR POSICION
+    // -----------------------------------------------
+
+    var posicionCorrecta =
+      distancia < 5;
+
+
+    // -----------------------------------------------
+    // COMPROBAR TAMAÑO
+    // -----------------------------------------------
+
+    var tamanioCorrecto =
+      sk.abs(
+        identidadJugadorTamano -
+        identidadHuecosTamano[
+          identidadHuecoCorrecto
+        ]
+      ) < 0.01;
+
+
+    // -----------------------------------------------
+    // VICTORIA
+    // -----------------------------------------------
+
+    if (
+      posicionCorrecta &&
+      tamanioCorrecto
+    ) {
+
+      identidadCompletado =
+        true;
+
+      identidadVerdeFinal =
+        0;
+    }
+
+
+  } else {
+
+    dibujarPantallaVictoriaIdentidad();
+  }
+}
+
+
+// =====================================================
+// INICIAR IDENTIDAD
+// =====================================================
+
+function iniciarIdentidad() {
+
+  identidadHuecosX =
+    new Array(
+      identidadCantidadHuecos
+    );
+
+  identidadHuecosY =
+    new Array(
+      identidadCantidadHuecos
+    );
+
+  identidadHuecosTamano =
+    new Array(
+      identidadCantidadHuecos
+    );
+
+
+  identidadCompletado =
+    false;
+
+  identidadVerdeFinal =
+    0;
+
+
+  crearEscenarioIdentidad();
+}
+
+
+// =====================================================
+// CREAR ESCENARIO
+// =====================================================
+
+function crearEscenarioIdentidad() {
+
+  // Usamos el tamaño de la pantalla para determinar
+  // los tamaños de los elementos.
+
+  var ladoReferencia =
+    sk.min(
+      sk.width,
+      sk.height
+    );
+
+
+  // ===================================================
+  // JUGADOR
+  // ===================================================
+
+  identidadJugadorTamano =
+    sk.random(
+      ladoReferencia * 0.075,
+      ladoReferencia * 0.105
+    );
+
+
+  identidadJugadorX =
+    sk.random(
+      identidadJugadorTamano / 2 + 30,
+      sk.width -
+      identidadJugadorTamano / 2 -
+      30
+    );
+
+
+  identidadJugadorY =
+    sk.random(
+      identidadJugadorTamano / 2 + 30,
+      sk.height -
+      identidadJugadorTamano / 2 -
+      30
+    );
+
+
+  // ===================================================
+  // ELEGIR HUECO CORRECTO
+  // ===================================================
+
+  identidadHuecoCorrecto =
+    sk.floor(
+      sk.random(
+        identidadCantidadHuecos
+      )
+    );
+
+
+  // ===================================================
+  // TAMAÑOS DE LOS HUECOS
+  // ===================================================
+
+  for (
+    var i = 0;
+    i < identidadCantidadHuecos;
+    i++
+  ) {
+
+    if (
+      i === identidadHuecoCorrecto
+    ) {
+
+      // El correcto tiene exactamente
+      // el mismo tamaño que el jugador.
+
+      identidadHuecosTamano[i] =
+        identidadJugadorTamano;
+
+    } else {
+
+      var posibilidad =
+        sk.random(1);
+
+
+      // Algunos son parecidos,
+      // pero ligeramente diferentes.
+
+      if (
+        posibilidad < 0.45
+      ) {
+
+        var diferencia =
+          sk.random(
+            3,
+            9
+          );
+
+
+        if (
+          sk.random(1) < 0.5
+        ) {
+
+          identidadHuecosTamano[i] =
+            sk.max(
+              ladoReferencia * 0.025,
+              identidadJugadorTamano -
+              diferencia
+            );
+
+        } else {
+
+          identidadHuecosTamano[i] =
+            identidadJugadorTamano +
+            diferencia;
+        }
+
+
+      } else {
+
+        // Otros son claramente diferentes.
+
+        if (
+          sk.random(1) < 0.5
+        ) {
+
+          identidadHuecosTamano[i] =
+            sk.random(
+              ladoReferencia * 0.025,
+              ladoReferencia * 0.07
+            );
+
+        } else {
+
+          identidadHuecosTamano[i] =
+            sk.random(
+              ladoReferencia * 0.12,
+              ladoReferencia * 0.20
+            );
+        }
+      }
+    }
+  }
+
+
+  // ===================================================
+  // UBICAR HUECOS
+  // ===================================================
+
+  for (
+    var i = 0;
+    i < identidadCantidadHuecos;
+    i++
+  ) {
+
+    var colocado =
+      false;
+
+
+    var mejorX =
+      sk.width / 2;
+
+
+    var mejorY =
+      sk.height / 2;
+
+
+    var mejorEspacio =
+      -Infinity;
+
+
+    // -------------------------------------------------
+    // MUCHOS INTENTOS PARA ENCONTRAR UN LUGAR
+    // -------------------------------------------------
+
+    for (
+      var intento = 0;
+      intento < 1500;
+      intento++
+    ) {
+
+      var tamano =
+        identidadHuecosTamano[i];
+
+
+      var margen =
+        tamano / 2 +
+        20;
+
+
+      var candidatoX =
+        sk.random(
+          margen,
+          sk.width -
+          margen
+        );
+
+
+      var candidatoY =
+        sk.random(
+          margen,
+          sk.height -
+          margen
+        );
+
+
+      var espacioMinimo =
+        Infinity;
+
+
+      // ------------------------------------------------
+      // COMPARAR CON LOS HUECOS ANTERIORES
+      // ------------------------------------------------
+
+      for (
+        var j = 0;
+        j < i;
+        j++
+      ) {
+
+        var distancia =
+          sk.dist(
+            candidatoX,
+            candidatoY,
+            identidadHuecosX[j],
+            identidadHuecosY[j]
+          );
+
+
+        var distanciaNecesaria =
+          tamano / 2 +
+          identidadHuecosTamano[j] / 2 +
+          18;
+
+
+        var espacio =
+          distancia -
+          distanciaNecesaria;
+
+
+        if (
+          espacio <
+          espacioMinimo
+        ) {
+
+          espacioMinimo =
+            espacio;
+        }
+      }
+
+
+      // ------------------------------------------------
+      // COMPARAR CON EL JUGADOR
+      // ------------------------------------------------
+
+      var distanciaJugador =
+        sk.dist(
+          candidatoX,
+          candidatoY,
+          identidadJugadorX,
+          identidadJugadorY
+        );
+
+
+      var distanciaNecesariaJugador =
+        tamano / 2 +
+        identidadJugadorTamano / 2 +
+        30;
+
+
+      var espacioJugador =
+        distanciaJugador -
+        distanciaNecesariaJugador;
+
+
+      if (
+        espacioJugador <
+        espacioMinimo
+      ) {
+
+        espacioMinimo =
+          espacioJugador;
+      }
+
+
+      // ------------------------------------------------
+      // GUARDAR LA MEJOR POSICION
+      // ------------------------------------------------
+
+      if (
+        espacioMinimo >
+        mejorEspacio
+      ) {
+
+        mejorEspacio =
+          espacioMinimo;
+
+        mejorX =
+          candidatoX;
+
+        mejorY =
+          candidatoY;
+      }
+
+
+      // ------------------------------------------------
+      // SI ES SUFICIENTEMENTE BUENA, USARLA
+      // ------------------------------------------------
+
+      if (
+        espacioMinimo >= 12
+      ) {
+
+        identidadHuecosX[i] =
+          candidatoX;
+
+        identidadHuecosY[i] =
+          candidatoY;
+
+        colocado =
+          true;
+
+        break;
+      }
+    }
+
+
+    // -------------------------------------------------
+    // SI NO ENCONTRO UNA POSICION PERFECTA
+    // USA LA MEJOR QUE ENCONTRO
+    // -------------------------------------------------
+
+    if (
+      !colocado
+    ) {
+
+      identidadHuecosX[i] =
+        mejorX;
+
+      identidadHuecosY[i] =
+        mejorY;
+    }
+  }
+
+
+  identidadTiempoTitileo =
+    0;
+
+  identidadArrastrando =
+    false;
+}
+
+
+// =====================================================
+// DIBUJAR ESCENARIO
+// =====================================================
+
+function dibujarEscenarioIdentidad() {
+
+  sk.rectMode(sk.CENTER);
+
+  sk.noStroke();
+
+
+  for (
+    var i = 0;
+    i < identidadCantidadHuecos;
+    i++
+  ) {
+
+    if (
+      !Number.isFinite(
+        identidadHuecosX[i]
+      ) ||
+
+      !Number.isFinite(
+        identidadHuecosY[i]
+      ) ||
+
+      !Number.isFinite(
+        identidadHuecosTamano[i]
+      )
+    ) {
+
+      continue;
+    }
+
+
+    sk.fill(
+      70,
+      70,
+      80
+    );
+
+
+    sk.rect(
+      identidadHuecosX[i],
+      identidadHuecosY[i],
+      identidadHuecosTamano[i],
+      identidadHuecosTamano[i]
+    );
+  }
+
+
+  sk.rectMode(sk.CORNER);
+}
+
+
+// =====================================================
+// DIBUJAR JUGADOR
+// =====================================================
+
+function dibujarJugadorIdentidad(
+  x,
+  y,
+  tamano,
+  opacidad
+) {
+
+  sk.rectMode(sk.CENTER);
+
+  sk.noStroke();
+
+
+  // Aura exterior
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad * 0.08
+  );
+
+
+  sk.rect(
+    x,
+    y,
+    tamano + 60,
+    tamano + 60
+  );
+
+
+  // Aura media
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad * 0.15
+  );
+
+
+  sk.rect(
+    x,
+    y,
+    tamano + 35,
+    tamano + 35
+  );
+
+
+  // Aura cercana
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad * 0.30
+  );
+
+
+  sk.rect(
+    x,
+    y,
+    tamano + 15,
+    tamano + 15
+  );
+
+
+  // Cuadrado principal
+
+  sk.stroke(
+    220,
+    180,
+    255,
+    opacidad
+  );
+
+
+  sk.strokeWeight(2);
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad
+  );
+
+
+  sk.rect(
+    x,
+    y,
+    tamano,
+    tamano
+  );
+
+
+  sk.rectMode(sk.CORNER);
+}
+
+
+// =====================================================
+// PANTALLA DE VICTORIA
+// =====================================================
+
+function dibujarPantallaVictoriaIdentidad() {
+
+  identidadVerdeFinal += 2;
+
+
+  var opacidad =
+    sk.min(
+      identidadVerdeFinal,
+      255
+    );
+
+
+  // ===================================================
+  // AHORA CUBRE TODA LA PANTALLA
+  // ===================================================
+
+  sk.noStroke();
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad
+  );
+
+
+  sk.rectMode(sk.CORNER);
+
+
+  sk.rect(
+    0,
+    0,
+    sk.width,
+    sk.height
+  );
+
+
+  // ===================================================
+  // REINICIAR
+  // ===================================================
+
+  if (
+    identidadVerdeFinal >= 510
+  ) {
+
+    identidadCompletado =
+      false;
+
+    identidadVerdeFinal =
+      0;
+
+    crearEscenarioIdentidad();
+  }
+}
+
+
+// =====================================================
+// PARTICULAS
+// =====================================================
+
+function crearParticulasIdentidad() {
+
+  identidadParticulas =
+    [];
+
+
+  for (
+    var i = 0;
+    i < identidadCantidadParticulas;
+    i++
+  ) {
+
+    identidadParticulas.push({
+
+      x:
+        sk.random(sk.width),
+
+      y:
+        sk.random(sk.height),
+
+      vx:
+        sk.random(
+          -0.15,
+          0.15
+        ),
+
+      vy:
+        sk.random(
+          -0.15,
+          0.15
+        ),
+
+      tamano:
+        sk.random(
+          1,
+          3
+        ),
+
+      opacidad:
+        sk.random(
+          15,
+          55
+        )
+    });
+  }
+}
+
+
+function actualizarParticulasIdentidad() {
+
+  for (
+    var i = 0;
+    i < identidadParticulas.length;
+    i++
+  ) {
+
+    var p =
+      identidadParticulas[i];
+
+
+    p.x += p.vx;
+
+    p.y += p.vy;
+
+
+    if (
+      p.x < 0
+    ) {
+
+      p.x =
+        sk.width;
+    }
+
+
+    if (
+      p.x > sk.width
+    ) {
+
+      p.x =
+        0;
+    }
+
+
+    if (
+      p.y < 0
+    ) {
+
+      p.y =
+        sk.height;
+    }
+
+
+    if (
+      p.y > sk.height
+    ) {
+
+      p.y =
+        0;
+    }
+  }
+}
+
+
+function dibujarParticulasIdentidad() {
+
+  sk.noStroke();
+
+
+  for (
+    var i = 0;
+    i < identidadParticulas.length;
+    i++
+  ) {
+
+    var p =
+      identidadParticulas[i];
+
+
+    sk.fill(
+      150,
+      150,
+      160,
+      p.opacidad
+    );
+
+
+    sk.ellipse(
+      p.x,
+      p.y,
+      p.tamano,
+      p.tamano
+    );
+  }
+}
+
+
+// =====================================================
+// TOUCH
+// =====================================================
+
+sk.touchStarted = function() {
+
+  activarFullscreenIdentidad();
+
+
+  if (
+    identidadCompletado
+  ) {
+
+    return false;
+  }
+
+
+  if (
+    sk.touches.length === 0
+  ) {
+
+    return false;
+  }
+
+
+  var toqueX =
+    sk.touches[0].x;
+
+
+  var toqueY =
+    sk.touches[0].y;
+
+
+  var distancia =
+    sk.dist(
+      toqueX,
+      toqueY,
+      identidadJugadorX,
+      identidadJugadorY
+    );
+
+
+  if (
+    distancia <
+    identidadJugadorTamano / 2
+  ) {
+
+    identidadArrastrando =
+      true;
+  }
+
+
+  return false;
+}
+
+
+// =====================================================
+// ARRASTRE
+// =====================================================
+
+sk.touchMoved = function() {
+
+  if (
+    identidadCompletado
+  ) {
+
+    return false;
+  }
+
+
+  if (
+    !identidadArrastrando
+  ) {
+
+    return false;
+  }
+
+
+  if (
+    sk.touches.length > 0
+  ) {
+
+    identidadJugadorX =
+      sk.touches[0].x;
+
+
+    identidadJugadorY =
+      sk.touches[0].y;
+  }
+
+
+  // El jugador puede recorrer toda la pantalla.
+
+  identidadJugadorX =
+    sk.constrain(
+      identidadJugadorX,
+      identidadJugadorTamano / 2,
+      sk.width -
+      identidadJugadorTamano / 2
+    );
+
+
+  identidadJugadorY =
+    sk.constrain(
+      identidadJugadorY,
+      identidadJugadorTamano / 2,
+      sk.height -
+      identidadJugadorTamano / 2
+    );
+
+
+  return false;
+}
+
+
+// =====================================================
+// SOLTAR
+// =====================================================
+
+sk.touchEnded = function() {
+
+  identidadArrastrando =
+    false;
+
+  return false;
+}
+
+
+// =====================================================
+// FULLSCREEN
+// =====================================================
+
+function activarFullscreenIdentidad() {
+
+  if (
+    !identidadFullscreen
+  ) {
+
+    void 0;
+
+    identidadFullscreen =
+      true;
+  }
+}
+
+
+// =====================================================
+// CAMBIO DE TAMAÑO
+// =====================================================
+
+sk.windowResized = function() {
+
+  sk.resizeCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+
+  crearParticulasIdentidad();
+
+  crearEscenarioIdentidad();
+}
+
+
+// =====================================================
+// ESC
+// =====================================================
+
+sk.keyPressed = function() {
+
+  if (
+    sk.keyCode === sk.ESCAPE
+  ) {
+
+    void 0;
+
+    identidadFullscreen =
+      false;
+  }
+}
+}
+function sketch_empatia(sk) {
+var empatiaCantidadCuadrados = 4;
+
+var empatiaCuadrados = [];
+
+var empatiaCantidadMoleculas = 140;
+
+var empatiaMoleculaX = [];
+var empatiaMoleculaY = [];
+
+var empatiaMoleculaDestinoX = [];
+var empatiaMoleculaDestinoY = [];
+
+var empatiaMoleculaOrigen = [];
+var empatiaMoleculaDestino = [];
+
+var empatiaMoleculaActiva = [];
+var empatiaMoleculaVelocidad = [];
+
+var empatiaTransfiriendo = false;
+var empatiaOrigen = -1;
+
+var empatiaEquilibrio = false;
+
+var empatiaTiempoEquilibrio = 0;
+var empatiaDuracionEquilibrio = 120;
+
+var empatiaPulso = 0;
+
+var empatiaParticulas = [];
+var empatiaCantidadParticulas = 90;
+
+var empatiaTouchActivo = false;
+var empatiaTouchID = -1;
+
+var empatiaFullscreen = false;
+
+
+// ========================================
+// SETUP
+// ========================================
+
+sk.setup = function() {
+
+  sk.createCanvas(_anchoVentana(sk), _altoVentana(sk));
+
+  crearParticulasEmpatia();
+
+  iniciarEmpatia();
+}
+
+
+// ========================================
+// DRAW
+// ========================================
+
+sk.draw = function() {
+
+  sk.background(0);
+
+  actualizarEstadoTouchEmpatia();
+
+  dibujarParticulasEmpatia();
+
+
+  if (empatiaEquilibrio) {
+
+    ejecutarPulsoEmpatia();
+
+    return;
+  }
+
+
+  if (empatiaTransfiriendo) {
+
+    generarMoleculasEmpatia();
+  }
+
+
+  actualizarMoleculasEmpatia();
+
+  comprobarEquilibrioEmpatia();
+
+  dibujarMoleculasEmpatia();
+
+  dibujarCuadradosEmpatia();
+}
+
+
+// ========================================
+// INICIAR EMPATÍA
+// ========================================
+
+function iniciarEmpatia() {
+
+  empatiaMoleculaX =
+    new Array(empatiaCantidadMoleculas);
+
+  empatiaMoleculaY =
+    new Array(empatiaCantidadMoleculas);
+
+  empatiaMoleculaDestinoX =
+    new Array(empatiaCantidadMoleculas);
+
+  empatiaMoleculaDestinoY =
+    new Array(empatiaCantidadMoleculas);
+
+  empatiaMoleculaOrigen =
+    new Array(empatiaCantidadMoleculas);
+
+  empatiaMoleculaDestino =
+    new Array(empatiaCantidadMoleculas);
+
+  empatiaMoleculaActiva =
+    new Array(empatiaCantidadMoleculas);
+
+  empatiaMoleculaVelocidad =
+    new Array(empatiaCantidadMoleculas);
+
+
+  for (
+    var i = 0;
+    i < empatiaCantidadMoleculas;
+    i++
+  ) {
+
+    empatiaMoleculaActiva[i] = false;
+  }
+
+
+  crearEscenarioEmpatia();
+}
+
+
+// ========================================
+// CREAR ESCENARIO
+// ========================================
+
+function crearEscenarioEmpatia() {
+
+  empatiaCuadrados = [];
+
+  empatiaTransfiriendo = false;
+
+  empatiaOrigen = -1;
+
+  empatiaEquilibrio = false;
+
+  empatiaTiempoEquilibrio = 0;
+
+  empatiaPulso = 0;
+
+  empatiaTouchActivo = false;
+
+  empatiaTouchID = -1;
+
+
+  var ladoReferencia =
+    sk.min(sk.width, sk.height);
+
+
+  var margenX =
+    sk.width * 0.22;
+
+  var margenY =
+    sk.height * 0.25;
+
+
+  // CUADRADO 1
+
+  empatiaCuadrados.push({
+
+    x: margenX,
+
+    y: margenY,
+
+    tamano: sk.random(
+      ladoReferencia * 0.15,
+      ladoReferencia * 0.21
+    )
+  });
+
+
+  // CUADRADO 2
+
+  empatiaCuadrados.push({
+
+    x: sk.width - margenX,
+
+    y: margenY,
+
+    tamano: sk.random(
+      ladoReferencia * 0.08,
+      ladoReferencia * 0.13
+    )
+  });
+
+
+  // CUADRADO 3
+
+  empatiaCuadrados.push({
+
+    x: margenX,
+
+    y: sk.height - margenY,
+
+    tamano: sk.random(
+      ladoReferencia * 0.17,
+      ladoReferencia * 0.24
+    )
+  });
+
+
+  // CUADRADO 4
+
+  empatiaCuadrados.push({
+
+    x: sk.width - margenX,
+
+    y: sk.height - margenY,
+
+    tamano: sk.random(
+      ladoReferencia * 0.10,
+      ladoReferencia * 0.16
+    )
+  });
+
+
+  for (
+    var i = 0;
+    i < empatiaCantidadMoleculas;
+    i++
+  ) {
+
+    empatiaMoleculaActiva[i] = false;
+  }
+}
+
+
+// ========================================
+// PARTÍCULAS DE FONDO
+// ========================================
+
+function crearParticulasEmpatia() {
+
+  empatiaParticulas = [];
+
+
+  for (
+    var i = 0;
+    i < empatiaCantidadParticulas;
+    i++
+  ) {
+
+    empatiaParticulas.push({
+
+      x: sk.random(sk.width),
+
+      y: sk.random(sk.height),
+
+      vx: sk.random(
+        -0.15,
+        0.15
+      ),
+
+      vy: sk.random(
+        -0.15,
+        0.15
+      ),
+
+      tamano: sk.random(
+        1,
+        3
+      ),
+
+      opacidad: sk.random(
+        15,
+        55
+      )
+    });
+  }
+}
+
+
+function dibujarParticulasEmpatia() {
+
+  sk.noStroke();
+
+
+  for (
+    var i = 0;
+    i < empatiaParticulas.length;
+    i++
+  ) {
+
+    var p =
+      empatiaParticulas[i];
+
+
+    p.x += p.vx;
+
+    p.y += p.vy;
+
+
+    if (p.x < 0) {
+
+      p.x = sk.width;
+    }
+
+
+    if (p.x > sk.width) {
+
+      p.x = 0;
+    }
+
+
+    if (p.y < 0) {
+
+      p.y = sk.height;
+    }
+
+
+    if (p.y > sk.height) {
+
+      p.y = 0;
+    }
+
+
+    sk.fill(
+      150,
+      150,
+      160,
+      p.opacidad
+    );
+
+
+    sk.ellipse(
+      p.x,
+      p.y,
+      p.tamano,
+      p.tamano
+    );
+  }
+}
+
+
+// ========================================
+// PROGRESO
+// ========================================
+
+function obtenerProgresoEmpatia() {
+
+  var mayor = -Infinity;
+
+  var menor = Infinity;
+
+
+  for (
+    var i = 0;
+    i < empatiaCuadrados.length;
+    i++
+  ) {
+
+    mayor =
+      sk.max(
+        mayor,
+        empatiaCuadrados[i].tamano
+      );
+
+
+    menor =
+      sk.min(
+        menor,
+        empatiaCuadrados[i].tamano
+      );
+  }
+
+
+  var diferencia =
+    mayor - menor;
+
+
+  return sk.constrain(
+
+    sk.map(
+      diferencia,
+      80,
+      0,
+      0,
+      1
+    ),
+
+    0,
+    1
+  );
+}
+
+
+// ========================================
+// DIBUJAR CUADRADOS
+// ========================================
+
+function dibujarCuadradosEmpatia() {
+
+  var progreso =
+    obtenerProgresoEmpatia();
+
+
+  for (
+    var i = 0;
+    i < empatiaCuadrados.length;
+    i++
+  ) {
+
+    var cuadrado =
+      empatiaCuadrados[i];
+
+
+    var pulso = 1;
+
+
+    if (
+      i !== empatiaOrigen
+    ) {
+
+      pulso =
+        1 +
+        sk.sin(
+          sk.millis() * 0.003
+        ) *
+        0.025;
+    }
+
+
+    var tamano =
+      cuadrado.tamano *
+      pulso;
+
+
+    var rojo =
+      sk.lerp(
+        190,
+        150,
+        progreso
+      );
+
+
+    var verde =
+      sk.lerp(
+        190,
+        50,
+        progreso
+      );
+
+
+    var azul =
+      sk.lerp(
+        195,
+        220,
+        progreso
+      );
+
+
+    sk.noStroke();
+
+
+    // AURA EXTERIOR
+
+    sk.fill(
+      rojo,
+      verde,
+      azul,
+      14
+    );
+
+
+    sk.rectMode(sk.CENTER);
+
+    sk.rect(
+      cuadrado.x,
+      cuadrado.y,
+      tamano + 50,
+      tamano + 50
+    );
+
+
+    // SEGUNDA AURA
+
+    sk.fill(
+      rojo,
+      verde,
+      azul,
+      28
+    );
+
+
+    sk.rect(
+      cuadrado.x,
+      cuadrado.y,
+      tamano + 28,
+      tamano + 28
+    );
+
+
+    // BRILLO DEL SELECCIONADO
+
+    if (
+      i === empatiaOrigen
+    ) {
+
+      sk.fill(
+        210,
+        170,
+        255,
+        80
+      );
+
+
+      sk.rect(
+        cuadrado.x,
+        cuadrado.y,
+        cuadrado.tamano + 15,
+        cuadrado.tamano + 15
+      );
+    }
+
+
+    // CUADRADO PRINCIPAL
+
+    sk.fill(
+      rojo,
+      verde,
+      azul
+    );
+
+
+    sk.rect(
+      cuadrado.x,
+      cuadrado.y,
+      tamano,
+      tamano
+    );
+
+
+    // NÚCLEO
+
+    if (
+      i === empatiaOrigen
+    ) {
+
+      sk.fill(
+        230,
+        180,
+        255
+      );
+
+
+      sk.rect(
+        cuadrado.x,
+        cuadrado.y,
+        cuadrado.tamano - 18,
+        cuadrado.tamano - 18
+      );
+    }
+  }
+
+
+  sk.rectMode(sk.CORNER);
+}
+
+
+// ========================================
+// GENERAR MOLÉCULAS
+// ========================================
+
+function generarMoleculasEmpatia() {
+
+  if (
+    empatiaOrigen < 0
+  ) {
+
+    return;
+  }
+
+
+  for (
+    var i = 0;
+    i < empatiaCantidadMoleculas;
+    i++
+  ) {
+
+    if (
+      !empatiaMoleculaActiva[i]
+    ) {
+
+      var destino =
+        sk.floor(
+          sk.random(3)
+        );
+
+
+      var contador = 0;
+
+
+      for (
+        var j = 0;
+        j < empatiaCuadrados.length;
+        j++
+      ) {
+
+        if (
+          j !== empatiaOrigen
+        ) {
+
+          if (
+            contador === destino
+          ) {
+
+            destino = j;
+
+            break;
+          }
+
+
+          contador++;
+        }
+      }
+
+
+      empatiaMoleculaActiva[i] =
+        true;
+
+
+      empatiaMoleculaOrigen[i] =
+        empatiaOrigen;
+
+
+      empatiaMoleculaDestino[i] =
+        destino;
+
+
+      empatiaMoleculaX[i] =
+        empatiaCuadrados[
+          empatiaOrigen
+        ].x;
+
+
+      empatiaMoleculaY[i] =
+        empatiaCuadrados[
+          empatiaOrigen
+        ].y;
+
+
+      empatiaMoleculaDestinoX[i] =
+        empatiaCuadrados[
+          destino
+        ].x;
+
+
+      empatiaMoleculaDestinoY[i] =
+        empatiaCuadrados[
+          destino
+        ].y;
+
+
+      empatiaMoleculaVelocidad[i] =
+        sk.random(
+          0.04,
+          0.08
+        );
+
+
+      break;
+    }
+  }
+}
+
+
+// ========================================
+// ACTUALIZAR MOLÉCULAS
+// ========================================
+
+function actualizarMoleculasEmpatia() {
+
+  for (
+    var i = 0;
+    i < empatiaCantidadMoleculas;
+    i++
+  ) {
+
+    if (
+      !empatiaMoleculaActiva[i]
+    ) {
+
+      continue;
+    }
+
+
+    empatiaMoleculaX[i] =
+      sk.lerp(
+        empatiaMoleculaX[i],
+        empatiaMoleculaDestinoX[i],
+        empatiaMoleculaVelocidad[i]
+      );
+
+
+    empatiaMoleculaY[i] =
+      sk.lerp(
+        empatiaMoleculaY[i],
+        empatiaMoleculaDestinoY[i],
+        empatiaMoleculaVelocidad[i]
+      );
+
+
+    var distancia =
+      sk.dist(
+        empatiaMoleculaX[i],
+        empatiaMoleculaY[i],
+        empatiaMoleculaDestinoX[i],
+        empatiaMoleculaDestinoY[i]
+      );
+
+
+    if (
+      distancia < 5
+    ) {
+
+      empatiaMoleculaActiva[i] =
+        false;
+
+
+      var origen =
+        empatiaMoleculaOrigen[i];
+
+
+      var destino =
+        empatiaMoleculaDestino[i];
+
+
+      var lado =
+        sk.min(sk.width, sk.height);
+
+
+      empatiaCuadrados[
+        origen
+      ].tamano =
+        sk.max(
+          empatiaCuadrados[
+            origen
+          ].tamano - 0.65,
+
+          lado * 0.05
+        );
+
+
+      empatiaCuadrados[
+        destino
+      ].tamano =
+        sk.min(
+          empatiaCuadrados[
+            destino
+          ].tamano + 0.65,
+
+          lado * 0.32
+        );
+    }
+  }
+}
+
+
+// ========================================
+// DIBUJAR MOLÉCULAS
+// ========================================
+
+function dibujarMoleculasEmpatia() {
+
+  sk.rectMode(sk.CENTER);
+
+  sk.noStroke();
+
+
+  for (
+    var i = 0;
+    i < empatiaCantidadMoleculas;
+    i++
+  ) {
+
+    if (
+      empatiaMoleculaActiva[i]
+    ) {
+
+      // AURA ROJA
+
+      sk.fill(
+        255,
+        0,
+        0,
+        30
+      );
+
+
+      sk.rect(
+        empatiaMoleculaX[i],
+        empatiaMoleculaY[i],
+        24,
+        24
+      );
+
+
+      // NÚCLEO ROJO
+
+      sk.fill(
+        255,
+        0,
+        0
+      );
+
+
+      sk.rect(
+        empatiaMoleculaX[i],
+        empatiaMoleculaY[i],
+        8,
+        8
+      );
+
+
+      // PUNTO BLANCO
+
+      sk.fill(
+        255,
+        180,
+        180
+      );
+
+
+      sk.rect(
+        empatiaMoleculaX[i],
+        empatiaMoleculaY[i],
+        3,
+        3
+      );
+    }
+  }
+
+
+  sk.rectMode(sk.CORNER);
+}
+
+
+// ========================================
+// COMPROBAR EQUILIBRIO
+// ========================================
+
+function comprobarEquilibrioEmpatia() {
+
+  var mayor =
+    -Infinity;
+
+  var menor =
+    Infinity;
+
+
+  for (
+    var i = 0;
+    i < empatiaCuadrados.length;
+    i++
+  ) {
+
+    mayor =
+      sk.max(
+        mayor,
+        empatiaCuadrados[i].tamano
+      );
+
+
+    menor =
+      sk.min(
+        menor,
+        empatiaCuadrados[i].tamano
+      );
+  }
+
+
+  var diferencia =
+    mayor - menor;
+
+
+  if (
+    diferencia <= 15
+  ) {
+
+    empatiaEquilibrio = true;
+
+    empatiaTiempoEquilibrio = 0;
+
+    empatiaPulso = 0;
+
+    empatiaTransfiriendo = false;
+
+    empatiaOrigen = -1;
+
+    empatiaTouchActivo = false;
+
+    empatiaTouchID = -1;
+  }
+}
+
+
+// ========================================
+// PULSO FINAL
+// ========================================
+
+function ejecutarPulsoEmpatia() {
+
+  empatiaTiempoEquilibrio++;
+
+  empatiaPulso += 0.18;
+
+
+  var escala =
+    1 +
+    sk.sin(empatiaPulso) *
+    0.05;
+
+
+  for (
+    var i = 0;
+    i < empatiaCuadrados.length;
+    i++
+  ) {
+
+    dibujarCuadradoEmpatiaPulso(
+      empatiaCuadrados[i],
+      escala
+    );
+  }
+
+
+  if (
+    empatiaTiempoEquilibrio >=
+    empatiaDuracionEquilibrio
+  ) {
+
+    crearEscenarioEmpatia();
+  }
+}
+
+
+// ========================================
+// CUADRADO DEL PULSO
+// ========================================
+
+function dibujarCuadradoEmpatiaPulso(
+  cuadrado,
+  escala
+) {
+
+  var tamano =
+    cuadrado.tamano *
+    escala;
+
+
+  sk.noStroke();
+
+  sk.rectMode(sk.CENTER);
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    20
+  );
+
+
+  sk.rect(
+    cuadrado.x,
+    cuadrado.y,
+    tamano + 45,
+    tamano + 45
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    45
+  );
+
+
+  sk.rect(
+    cuadrado.x,
+    cuadrado.y,
+    tamano + 25,
+    tamano + 25
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220
+  );
+
+
+  sk.rect(
+    cuadrado.x,
+    cuadrado.y,
+    tamano,
+    tamano
+  );
+
+
+  sk.rectMode(sk.CORNER);
+}
+
+
+// ========================================
+// BUSCAR TOUCH ACTIVO
+// ========================================
+
+function actualizarEstadoTouchEmpatia() {
+
+  if (
+    empatiaEquilibrio
+  ) {
+
+    return;
+  }
+
+
+  // No hay dedos tocando
+
+  if (
+    sk.touches.length === 0
+  ) {
+
+    empatiaTouchActivo = false;
+
+    empatiaTouchID = -1;
+
+    empatiaTransfiriendo = false;
+
+    empatiaOrigen = -1;
+
+    return;
+  }
+
+
+  // ====================================
+  // SI YA TENEMOS UN DEDO ASIGNADO
+  // ====================================
+
+  if (
+    empatiaTouchID !== -1
+  ) {
+
+    for (
+      var i = 0;
+      i < sk.touches.length;
+      i++
+    ) {
+
+      if (
+        sk.touches[i].id ===
+        empatiaTouchID
+      ) {
+
+        empatiaTouchActivo = true;
+
+        empatiaTransfiriendo = true;
+
+        return;
+      }
+    }
+
+
+    // El dedo desapareció
+
+    empatiaTouchActivo = false;
+
+    empatiaTouchID = -1;
+
+    empatiaTransfiriendo = false;
+
+    empatiaOrigen = -1;
+  }
+
+
+  // ====================================
+  // BUSCAR UN NUEVO DEDO
+  // ====================================
+
+  for (
+    var i = 0;
+    i < sk.touches.length;
+    i++
+  ) {
+
+    var tx =
+      sk.touches[i].x;
+
+    var ty =
+      sk.touches[i].y;
+
+
+    for (
+      var j = 0;
+      j < empatiaCuadrados.length;
+      j++
+    ) {
+
+      var cuadrado =
+        empatiaCuadrados[j];
+
+
+      if (
+
+        tx >
+        cuadrado.x -
+        cuadrado.tamano / 2 &&
+
+        tx <
+        cuadrado.x +
+        cuadrado.tamano / 2 &&
+
+        ty >
+        cuadrado.y -
+        cuadrado.tamano / 2 &&
+
+        ty <
+        cuadrado.y +
+        cuadrado.tamano / 2
+
+      ) {
+
+        empatiaOrigen = j;
+
+        empatiaTouchID =
+          sk.touches[i].id;
+
+        empatiaTouchActivo = true;
+
+        empatiaTransfiriendo = true;
+
+        return;
+      }
+    }
+  }
+}
+
+
+// ========================================
+// TOUCH STARTED
+// ========================================
+
+sk.touchStarted = function() {
+
+  activarFullscreenEmpatia();
+
+  actualizarEstadoTouchEmpatia();
+
+  return false;
+}
+
+
+// ========================================
+// TOUCH MOVED
+// ========================================
+
+sk.touchMoved = function() {
+
+  actualizarEstadoTouchEmpatia();
+
+  return false;
+}
+
+
+// ========================================
+// TOUCH ENDED
+// ========================================
+
+sk.touchEnded = function() {
+
+  empatiaTouchActivo = false;
+
+  empatiaTouchID = -1;
+
+  empatiaTransfiriendo = false;
+
+  empatiaOrigen = -1;
+
+  return false;
+}
+
+
+// ========================================
+// FULLSCREEN
+// ========================================
+
+function activarFullscreenEmpatia() {
+
+  if (
+    !empatiaFullscreen
+  ) {
+
+    void 0;
+
+    empatiaFullscreen = true;
+  }
+}
+
+
+// ========================================
+// CAMBIO DE TAMAÑO
+// ========================================
+
+sk.windowResized = function() {
+
+  sk.resizeCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+  crearParticulasEmpatia();
+
+  crearEscenarioEmpatia();
+}
+}
+function sketch_colaboracion(sk) {
+var colaboracionDisparos = [];
+var colaboracionCuadrados = [];
+
+var colaboracionTocando = [false, false, false, false];
+
+var colaboracionExplotando = false;
+var colaboracionPantallaBlanca = false;
+
+var colaboracionCarga = 0;
+
+var colaboracionTiempoExplosion;
+var colaboracionDuracionExplosion = 650;
+
+var colaboracionTiempoBlanco;
+var colaboracionDuracionBlanco = 500;
+
+var colaboracionParticulas = [];
+var colaboracionCantidadParticulas = 90;
+
+
+// =====================================================
+// SETUP
+// =====================================================
+
+sk.setup = function() {
+
+  var _cnv = sk.createCanvas(_anchoVentana(sk), _altoVentana(sk));
+
+  // Evita que el navegador haga zoom, scroll o gestos
+  // mientras tocamos el canvas (usamos el canvas de ESTA instancia,
+  // no el primero que encuentre en todo el documento).
+  _cnv.elt.style.touchAction = "none";
+  _cnv.elt.style.userSelect = "none";
+  _cnv.elt.style.webkitUserSelect = "none";
+
+  crearParticulasColaboracion();
+  iniciarColaboracion();
+}
+
+
+// =====================================================
+// DRAW
+// =====================================================
+
+sk.draw = function() {
+
+  sk.background(0);
+
+  dibujarParticulasColaboracion();
+
+
+  // Actualizamos los cuatro botones según
+  // TODOS los dedos que están actualmente sobre la pantalla.
+  actualizarToquesColaboracion();
+
+
+  if (colaboracionPantallaBlanca) {
+
+    animarPantallaBlancaColaboracion();
+
+    return;
+  }
+
+
+  if (colaboracionExplotando) {
+
+    animarExplosionColaboracion();
+
+    return;
+  }
+
+
+  actualizarColaboracion();
+
+  actualizarDisparosColaboracion();
+
+  mostrarJefeColaboracion();
+
+
+  for (
+    var i = 0;
+    i < 4;
+    i++
+  ) {
+
+    colaboracionCuadrados[i].mostrar(
+      colaboracionTocando[i]
+    );
+  }
+
+
+  for (
+    var i = 0;
+    i < colaboracionDisparos.length;
+    i++
+  ) {
+
+    colaboracionDisparos[i].mostrar();
+  }
+}
+
+
+// =====================================================
+// PARTICULAS DEL FONDO
+// =====================================================
+
+function crearParticulasColaboracion() {
+
+  colaboracionParticulas = [];
+
+  for (
+    var i = 0;
+    i < colaboracionCantidadParticulas;
+    i++
+  ) {
+
+    colaboracionParticulas.push({
+
+      x: sk.random(sk.width),
+      y: sk.random(sk.height),
+
+      vx: sk.random(-0.15, 0.15),
+      vy: sk.random(-0.15, 0.15),
+
+      tamano: sk.random(1, 3),
+
+      opacidad: sk.random(15, 55)
+    });
+  }
+}
+
+
+function dibujarParticulasColaboracion() {
+
+  sk.noStroke();
+
+  for (
+    var i = 0;
+    i < colaboracionParticulas.length;
+    i++
+  ) {
+
+    var p =
+      colaboracionParticulas[i];
+
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+
+    if (p.x < 0) {
+      p.x = sk.width;
+    }
+
+    if (p.x > sk.width) {
+      p.x = 0;
+    }
+
+
+    if (p.y < 0) {
+      p.y = sk.height;
+    }
+
+    if (p.y > sk.height) {
+      p.y = 0;
+    }
+
+
+    sk.fill(
+      150,
+      150,
+      160,
+      p.opacidad
+    );
+
+
+    sk.ellipse(
+      p.x,
+      p.y,
+      p.tamano,
+      p.tamano
+    );
+  }
+}
+
+
+// =====================================================
+// INICIAR COLABORACION
+// =====================================================
+
+function iniciarColaboracion() {
+
+  colaboracionDisparos = [];
+
+  colaboracionCuadrados = [];
+
+
+  var margenHorizontal =
+    sk.min(sk.width * 0.08, 100);
+
+  var margenVertical =
+    sk.min(sk.height * 0.12, 100);
+
+
+  colaboracionCuadrados.push(
+    new CuadradoColaboracion(
+      margenHorizontal,
+      margenVertical
+    )
+  );
+
+
+  colaboracionCuadrados.push(
+    new CuadradoColaboracion(
+      sk.width - margenHorizontal,
+      margenVertical
+    )
+  );
+
+
+  colaboracionCuadrados.push(
+    new CuadradoColaboracion(
+      margenHorizontal,
+      sk.height - margenVertical
+    )
+  );
+
+
+  colaboracionCuadrados.push(
+    new CuadradoColaboracion(
+      sk.width - margenHorizontal,
+      sk.height - margenVertical
+    )
+  );
+
+
+  colaboracionCarga = 0;
+
+  colaboracionExplotando = false;
+
+  colaboracionPantallaBlanca = false;
+
+
+  for (
+    var i = 0;
+    i < 4;
+    i++
+  ) {
+
+    colaboracionTocando[i] = false;
+  }
+}
+
+
+// =====================================================
+// MULTITOUCH
+// =====================================================
+
+function actualizarToquesColaboracion() {
+
+  // Primero apagamos todos los botones.
+
+  for (
+    var i = 0;
+    i < 4;
+    i++
+  ) {
+
+    colaboracionTocando[i] = false;
+  }
+
+
+  // Si no hay dedos, no hacemos nada más.
+
+  if (
+    sk.touches.length === 0
+  ) {
+
+    return;
+  }
+
+
+  // Recorremos TODOS los dedos.
+
+  for (
+    var i = 0;
+    i < sk.touches.length;
+    i++
+  ) {
+
+    var toque =
+      sk.touches[i];
+
+
+    var tx =
+      toque.x;
+
+    var ty =
+      toque.y;
+
+
+    // Comprobamos ese dedo contra
+    // los cuatro cuadrados.
+
+    for (
+      var j = 0;
+      j < 4;
+      j++
+    ) {
+
+      var cuadrado =
+        colaboracionCuadrados[j];
+
+
+      var mitad =
+        cuadrado.tamano / 2;
+
+
+      if (
+        tx >= cuadrado.x - mitad &&
+        tx <= cuadrado.x + mitad &&
+        ty >= cuadrado.y - mitad &&
+        ty <= cuadrado.y + mitad
+      ) {
+
+        colaboracionTocando[j] = true;
+      }
+    }
+  }
+}
+
+
+// =====================================================
+// LOGICA DEL JUEGO
+// =====================================================
+
+function actualizarColaboracion() {
+
+  var cantidadActivos = 0;
+
+
+  for (
+    var i = 0;
+    i < 4;
+    i++
+  ) {
+
+    if (
+      colaboracionTocando[i]
+    ) {
+
+      cantidadActivos++;
+    }
+  }
+
+
+  if (
+    cantidadActivos === 0
+  ) {
+
+    return;
+  }
+
+
+  var limiteCarga =
+    cantidadActivos * 25;
+
+
+  if (
+    colaboracionCarga >= limiteCarga
+  ) {
+
+    return;
+  }
+
+
+  // Cada cuadrado presionado
+  // puede lanzar disparos.
+
+  for (
+    var i = 0;
+    i < 4;
+    i++
+  ) {
+
+    if (
+      colaboracionTocando[i] &&
+      sk.random(1) < 0.65
+    ) {
+
+      colaboracionDisparos.push(
+        new DisparoColaboracion(
+          colaboracionCuadrados[i].x,
+          colaboracionCuadrados[i].y
+        )
+      );
+    }
+  }
+}
+
+
+// =====================================================
+// DISPAROS
+// =====================================================
+
+function actualizarDisparosColaboracion() {
+
+  var cantidadActivos = 0;
+
+
+  for (
+    var i = 0;
+    i < 4;
+    i++
+  ) {
+
+    if (
+      colaboracionTocando[i]
+    ) {
+
+      cantidadActivos++;
+    }
+  }
+
+
+  var limiteCarga =
+    cantidadActivos * 25;
+
+
+  for (
+    var i =
+      colaboracionDisparos.length - 1;
+
+    i >= 0;
+
+    i--
+  ) {
+
+    var disparo =
+      colaboracionDisparos[i];
+
+
+    disparo.actualizar();
+
+
+    if (
+      disparo.impacto
+    ) {
+
+      if (
+        colaboracionCarga <
+        limiteCarga
+      ) {
+
+        colaboracionCarga += 1;
+      }
+
+
+      if (
+        colaboracionCarga >
+        limiteCarga
+      ) {
+
+        colaboracionCarga =
+          limiteCarga;
+      }
+
+
+      colaboracionDisparos.splice(
+        i,
+        1
+      );
+
+      continue;
+    }
+
+
+    if (
+      disparo.fueraPantalla()
+    ) {
+
+      colaboracionDisparos.splice(
+        i,
+        1
+      );
+    }
+  }
+
+
+  // Solo ganamos cuando los cuatro
+  // botones están siendo tocados
+  // simultáneamente.
+
+  if (
+    cantidadActivos === 4 &&
+    colaboracionCarga >= 100
+  ) {
+
+    colaboracionCarga = 100;
+
+    comenzarExplosionColaboracion();
+  }
+}
+
+
+// =====================================================
+// JEFE CENTRAL
+// =====================================================
+
+function mostrarJefeColaboracion() {
+
+  var tamano = 230;
+
+  var x = sk.width / 2;
+
+  var y = sk.height / 2;
+
+
+  sk.rectMode(sk.CENTER);
+
+  sk.noStroke();
+
+
+  // Halo gris muy sutil
+
+  sk.fill(
+    180,
+    180,
+    185,
+    12
+  );
+
+
+  sk.rect(
+    x,
+    y,
+    tamano + 35,
+    tamano + 35
+  );
+
+
+  // Cuerpo gris
+
+  sk.fill(
+    120,
+    120,
+    125
+  );
+
+
+  sk.rect(
+    x,
+    y,
+    tamano,
+    tamano
+  );
+
+
+  // =================================================
+  // CARGA ROJA
+  // =================================================
+
+  var alturaCarga =
+    sk.map(
+      colaboracionCarga,
+      0,
+      100,
+      0,
+      tamano
+    );
+
+
+  if (
+    alturaCarga > 0
+  ) {
+
+    sk.fill(
+      255,
+      0,
+      0
+    );
+
+
+    // La carga crece desde abajo hacia arriba.
+
+    sk.rect(
+      x,
+      y +
+      tamano / 2 -
+      alturaCarga / 2,
+      tamano,
+      alturaCarga
+    );
+  }
+
+
+  sk.rectMode(sk.CORNER);
+}
+
+
+// =====================================================
+// CUADRADOS DE COLABORACION
+// =====================================================
+
+function mostrarCuadradoColaboracion(
+  cuadrado,
+  presionado
+) {
+
+  sk.rectMode(sk.CENTER);
+
+  sk.noStroke();
+
+
+  var pulso = 1;
+
+
+  // Si no está presionado,
+  // respira/pulsa suavemente.
+
+  if (
+    !presionado
+  ) {
+
+    pulso =
+      1 +
+      sk.sin(
+        sk.millis() * 0.003
+      ) * 0.04;
+  }
+
+
+  var tamanoPulso =
+    cuadrado.tamano * pulso;
+
+
+  // Aura exterior
+
+  sk.fill(
+    150,
+    50,
+    220,
+    14
+  );
+
+
+  sk.rect(
+    cuadrado.x,
+    cuadrado.y,
+    tamanoPulso + 45,
+    tamanoPulso + 45
+  );
+
+
+  // Aura interior
+
+  sk.fill(
+    150,
+    50,
+    220,
+    25
+  );
+
+
+  sk.rect(
+    cuadrado.x,
+    cuadrado.y,
+    tamanoPulso + 25,
+    tamanoPulso + 25
+  );
+
+
+  // Cuando está presionado,
+  // la luz se intensifica.
+
+  if (
+    presionado
+  ) {
+
+    sk.fill(
+      190,
+      120,
+      255,
+      90
+    );
+
+
+    sk.rect(
+      cuadrado.x,
+      cuadrado.y,
+      cuadrado.tamano + 15,
+      cuadrado.tamano + 15
+    );
+  }
+
+
+  // Cuerpo violeta
+
+  sk.fill(
+    150,
+    50,
+    220
+  );
+
+
+  sk.rect(
+    cuadrado.x,
+    cuadrado.y,
+
+    presionado
+      ? cuadrado.tamano
+      : tamanoPulso,
+
+    presionado
+      ? cuadrado.tamano
+      : tamanoPulso
+  );
+
+
+  // Centro blanco/violeta cuando se presiona
+
+  if (
+    presionado
+  ) {
+
+    sk.fill(
+      230,
+      210,
+      255
+    );
+
+
+    sk.rect(
+      cuadrado.x,
+      cuadrado.y,
+      cuadrado.tamano - 20,
+      cuadrado.tamano - 20
+    );
+  }
+
+
+  sk.rectMode(sk.CORNER);
+}
+
+
+// =====================================================
+// EXPLOSION
+// =====================================================
+
+function comenzarExplosionColaboracion() {
+
+  colaboracionExplotando = true;
+
+  colaboracionTiempoExplosion =
+    sk.millis();
+
+
+  colaboracionDisparos = [];
+
+
+  for (
+    var i = 0;
+    i < 4;
+    i++
+  ) {
+
+    colaboracionTocando[i] = false;
+  }
+}
+
+
+function animarExplosionColaboracion() {
+
+  var progreso =
+    (
+      sk.millis() -
+      colaboracionTiempoExplosion
+    ) /
+    colaboracionDuracionExplosion;
+
+
+  progreso =
+    sk.constrain(
+      progreso,
+      0,
+      1
+    );
+
+
+  sk.background(255);
+
+
+  var escala =
+    sk.lerp(
+      1,
+      2.5,
+      progreso
+    );
+
+
+  var opacidadExplosion =
+    sk.lerp(
+      255,
+      0,
+      progreso
+    );
+
+
+  sk.push();
+
+
+  sk.translate(
+    sk.width / 2,
+    sk.height / 2
+  );
+
+
+  sk.scale(
+    escala
+  );
+
+
+  sk.noStroke();
+
+
+  sk.fill(
+    255,
+    0,
+    0,
+    opacidadExplosion
+  );
+
+
+  sk.rectMode(sk.CENTER);
+
+
+  sk.rect(
+    0,
+    0,
+    230,
+    230
+  );
+
+
+  sk.pop();
+
+
+  sk.rectMode(sk.CORNER);
+
+
+  if (
+    progreso >= 1
+  ) {
+
+    comenzarPantallaBlancaColaboracion();
+  }
+}
+
+
+// =====================================================
+// PANTALLA BLANCA
+// =====================================================
+
+function comenzarPantallaBlancaColaboracion() {
+
+  colaboracionExplotando = false;
+
+  colaboracionPantallaBlanca = true;
+
+  colaboracionTiempoBlanco =
+    sk.millis();
+
+  colaboracionCarga = 0;
+
+  colaboracionDisparos = [];
+
+
+  for (
+    var i = 0;
+    i < 4;
+    i++
+  ) {
+
+    colaboracionTocando[i] = false;
+  }
+}
+
+
+function animarPantallaBlancaColaboracion() {
+
+  sk.background(255);
+
+
+  if (
+    sk.millis() -
+    colaboracionTiempoBlanco >=
+    colaboracionDuracionBlanco
+  ) {
+
+    iniciarColaboracion();
+  }
+}
+
+
+// =====================================================
+// CLASE CUADRADO
+// =====================================================
+
+class CuadradoColaboracion {
+
+  constructor(
+    x,
+    y
+  ) {
+
+    this.x = x;
+
+    this.y = y;
+
+    this.tamano = 90;
+  }
+
+
+  mostrar(
+    presionado
+  ) {
+
+    mostrarCuadradoColaboracion(
+      this,
+      presionado
+    );
+  }
+}
+
+
+// =====================================================
+// CLASE DISPARO
+// =====================================================
+
+class DisparoColaboracion {
+
+  constructor(
+    x,
+    y
+  ) {
+
+    this.x = x;
+
+    this.y = y;
+
+
+    this.velocidad =
+      sk.random(
+        9,
+        13
+      );
+
+
+    this.impacto = false;
+  }
+
+
+  actualizar() {
+
+    var objetivoX =
+      sk.width / 2;
+
+
+    var objetivoY =
+      sk.height / 2;
+
+
+    var dx =
+      objetivoX -
+      this.x;
+
+
+    var dy =
+      objetivoY -
+      this.y;
+
+
+    var distancia =
+      sk.sqrt(
+        dx * dx +
+        dy * dy
+      );
+
+
+    if (
+      distancia < 115
+    ) {
+
+      this.impacto = true;
+
+      return;
+    }
+
+
+    if (
+      distancia < 0.001
+    ) {
+
+      this.impacto = true;
+
+      return;
+    }
+
+
+    dx /= distancia;
+
+    dy /= distancia;
+
+
+    this.x +=
+      dx *
+      this.velocidad;
+
+
+    this.y +=
+      dy *
+      this.velocidad;
+  }
+
+
+  mostrar() {
+
+    sk.noStroke();
+
+    sk.rectMode(sk.CENTER);
+
+
+    // Halo rojo
+
+    sk.fill(
+      255,
+      0,
+      0,
+      35
+    );
+
+
+    sk.rect(
+      this.x,
+      this.y,
+      26,
+      26
+    );
+
+
+    // Láser rojo
+
+    sk.fill(
+      255,
+      0,
+      0
+    );
+
+
+    sk.rect(
+      this.x,
+      this.y,
+      10,
+      10
+    );
+
+
+    // Núcleo brillante
+
+    sk.fill(
+      255,
+      180,
+      180
+    );
+
+
+    sk.rect(
+      this.x,
+      this.y,
+      4,
+      4
+    );
+
+
+    sk.rectMode(sk.CORNER);
+  }
+
+
+  fueraPantalla() {
+
+    return (
+      this.x < -30 ||
+      this.x > sk.width + 30 ||
+      this.y < -30 ||
+      this.y > sk.height + 30
+    );
+  }
+}
+
+
+// =====================================================
+// EVENTOS TACTILES
+// =====================================================
+
+// No usamos mouse.
+// Estos eventos solamente evitan que el navegador
+// interfiera con la interacción táctil.
+
+sk.touchStarted = function() {
+
+  return false;
+}
+
+
+sk.touchMoved = function() {
+
+  return false;
+}
+
+
+sk.touchEnded = function() {
+
+  return false;
+}
+
+
+// =====================================================
+// REDIMENSIONAR PANTALLA
+// =====================================================
+
+sk.windowResized = function() {
+
+  sk.resizeCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+  crearParticulasColaboracion();
+
+  iniciarColaboracion();
+}
+}
+function sketch_incertidumbre(sk) {
+var triangulos = [];
+
+var jugadorX, jugadorY;
+var objetivoX, objetivoY;
+
+var velocidad = 1.15;
+var velocidadEnemigo = 0.75;
+
+var salidaX, salidaY;
+
+var tocando = false;
+
+var reiniciando = false;
+var muerte = false;
+
+var tiempoReinicio;
+var tiempoMuerte;
+
+var duracionMuerte = 900;
+var duracionNegro = 3000;
+
+var pulsoActual = 1.2;
+var pulsoObjetivo = 1.2;
+
+var intensidadAura = 70;
+var intensidadObjetivo = 70;
+
+var tiempoPulso = 0;
+var tiempoSalida = 0;
+
+var enemigo;
+
+var particulas = [];
+var cantidadParticulas = 90;
+
+var escalaIncertidumbre = 1;
+var offsetXIncertidumbre = 0;
+var offsetYIncertidumbre = 0;
+
+var anchoBaseIncertidumbre = 700;
+var altoBaseIncertidumbre = 700;
+
+var fullscreenIncertidumbre = false;
+
+
+// =====================================================
+// SETUP
+// =====================================================
+
+sk.setup = function() {
+
+  sk.createCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+  calcularEscalaIncertidumbre();
+
+  crearParticulas();
+
+  iniciarNivel();
+}
+
+
+// =====================================================
+// DRAW
+// =====================================================
+
+sk.draw = function() {
+
+  sk.background(0);
+
+  calcularEscalaIncertidumbre();
+
+  dibujarParticulas();
+
+
+  if (
+    muerte
+  ) {
+
+    animarMuerte();
+
+    return;
+  }
+
+
+  if (
+    reiniciando
+  ) {
+
+    animarReinicio();
+
+    return;
+  }
+
+
+  sk.push();
+
+  sk.translate(
+    offsetXIncertidumbre,
+    offsetYIncertidumbre
+  );
+
+  sk.scale(
+    escalaIncertidumbre
+  );
+
+
+  moverJugador();
+
+  actualizarTriangulos();
+
+  detectarEnfoque();
+
+  actualizarAura();
+
+  dibujarEscenario();
+
+  dibujarAura();
+
+  dibujarJugador();
+
+  comprobarSalida();
+
+  comprobarEnemigo();
+
+
+  sk.pop();
+}
+
+
+// =====================================================
+// ESCALA
+// =====================================================
+
+function calcularEscalaIncertidumbre() {
+
+  var espacioDisponible =
+    sk.min(
+      sk.width,
+      sk.height
+    );
+
+
+  escalaIncertidumbre =
+    (
+      espacioDisponible *
+      0.92
+    ) /
+    anchoBaseIncertidumbre;
+
+
+  offsetXIncertidumbre =
+    (
+      sk.width -
+      anchoBaseIncertidumbre *
+      escalaIncertidumbre
+    ) / 2;
+
+
+  offsetYIncertidumbre =
+    (
+      sk.height -
+      altoBaseIncertidumbre *
+      escalaIncertidumbre
+    ) / 2;
+}
+
+
+// =====================================================
+// PARTICULAS
+// =====================================================
+
+function crearParticulas() {
+
+  particulas = [];
+
+
+  for (
+    var i = 0;
+    i < cantidadParticulas;
+    i++
+  ) {
+
+    particulas.push({
+
+      x:
+        sk.random(
+          700
+        ),
+
+      y:
+        sk.random(
+          700
+        ),
+
+      vx:
+        sk.random(
+          -0.18,
+          0.18
+        ),
+
+      vy:
+        sk.random(
+          -0.18,
+          0.18
+        ),
+
+      s:
+        sk.random(
+          1,
+          3
+        ),
+
+      a:
+        sk.random(
+          15,
+          65
+        )
+    });
+  }
+}
+
+
+function dibujarParticulas() {
+
+  sk.noStroke();
+
+
+  for (
+    var p of particulas
+  ) {
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+
+    if (
+      p.x < 0
+    ) {
+
+      p.x =
+        700;
+    }
+
+
+    if (
+      p.x > 700
+    ) {
+
+      p.x =
+        0;
+    }
+
+
+    if (
+      p.y < 0
+    ) {
+
+      p.y =
+        700;
+    }
+
+
+    if (
+      p.y > 700
+    ) {
+
+      p.y =
+        0;
+    }
+
+
+    sk.fill(
+      150,
+      150,
+      160,
+      p.a
+    );
+
+
+    sk.ellipse(
+      offsetXIncertidumbre +
+      p.x *
+      escalaIncertidumbre,
+
+      offsetYIncertidumbre +
+      p.y *
+      escalaIncertidumbre,
+
+      p.s *
+      escalaIncertidumbre,
+
+      p.s *
+      escalaIncertidumbre
+    );
+  }
+}
+
+
+// =====================================================
+// NIVEL
+// =====================================================
+
+function iniciarNivel() {
+
+  triangulos = [];
+
+
+  jugadorX = 100;
+
+  jugadorY = 350;
+
+
+  objetivoX =
+    jugadorX;
+
+  objetivoY =
+    jugadorY;
+
+
+  var intentos = 0;
+
+
+  do {
+
+    salidaX =
+      sk.random(
+        455,
+        660
+      );
+
+    salidaY =
+      sk.random(
+        40,
+        660
+      );
+
+
+    intentos++;
+
+  } while (
+    sk.dist(
+      salidaX,
+      salidaY,
+      jugadorX,
+      jugadorY
+    ) < 450 &&
+    intentos < 200
+  );
+
+
+  for (
+    var i = 0;
+    i < 45;
+    i++
+  ) {
+
+    triangulos.push(
+      new Triangulo(
+        sk.random(
+          30,
+          670
+        ),
+
+        sk.random(
+          30,
+          670
+        ),
+
+        sk.random(
+          20,
+          70
+        ),
+
+        false
+      )
+    );
+  }
+
+
+  var ex;
+  var ey;
+
+  intentos = 0;
+
+
+  do {
+
+    ex =
+      sk.random(
+        350,
+        670
+      );
+
+    ey =
+      sk.random(
+        30,
+        670
+      );
+
+
+    intentos++;
+
+  } while (
+    sk.dist(
+      ex,
+      ey,
+      jugadorX,
+      jugadorY
+    ) < 300 &&
+    intentos < 200
+  );
+
+
+  enemigo =
+    new Triangulo(
+      ex,
+      ey,
+      65,
+      true
+    );
+
+
+  triangulos.push(
+    enemigo
+  );
+
+
+  pulsoActual = 1.2;
+
+  pulsoObjetivo = 1.2;
+
+  intensidadAura = 70;
+
+  intensidadObjetivo = 70;
+
+  tiempoPulso = 0;
+
+  tiempoSalida = 0;
+
+  tocando = false;
+
+  reiniciando = false;
+
+  muerte = false;
+}
+
+
+// =====================================================
+// JUGADOR
+// =====================================================
+
+function moverJugador() {
+
+  if (
+    !tocando
+  ) {
+
+    return;
+  }
+
+
+  var dx =
+    objetivoX -
+    jugadorX;
+
+
+  var dy =
+    objetivoY -
+    jugadorY;
+
+
+  var d =
+    sk.sqrt(
+      dx * dx +
+      dy * dy
+    );
+
+
+  if (
+    d > 3
+  ) {
+
+    dx /= d;
+
+    dy /= d;
+
+
+    jugadorX +=
+      dx *
+      velocidad;
+
+    jugadorY +=
+      dy *
+      velocidad;
+  }
+
+
+  // IMPORTANTE:
+  // El límite corresponde al espacio virtual 700x700.
+
+  jugadorX =
+    sk.constrain(
+      jugadorX,
+      20,
+      680
+    );
+
+
+  jugadorY =
+    sk.constrain(
+      jugadorY,
+      20,
+      680
+    );
+}
+
+
+// =====================================================
+// TRIANGULOS
+// =====================================================
+
+function actualizarTriangulos() {
+
+  for (
+    var t of triangulos
+  ) {
+
+    t.actualizar();
+  }
+}
+
+
+// =====================================================
+// ENFOQUE
+// =====================================================
+
+function detectarEnfoque() {
+
+  var d =
+    sk.dist(
+      jugadorX,
+      jugadorY,
+      enemigo.x,
+      enemigo.y
+    );
+
+
+  if (
+    d < 150
+  ) {
+
+    pulsoObjetivo = 9;
+
+    intensidadObjetivo = 175;
+
+  } else {
+
+    pulsoObjetivo = 1.2;
+
+    intensidadObjetivo = 70;
+  }
+}
+
+
+// =====================================================
+// AURA
+// =====================================================
+
+function actualizarAura() {
+
+  pulsoActual =
+    sk.lerp(
+      pulsoActual,
+      pulsoObjetivo,
+      0.035
+    );
+
+
+  intensidadAura =
+    sk.lerp(
+      intensidadAura,
+      intensidadObjetivo,
+      0.025
+    );
+
+
+  tiempoPulso +=
+    0.035 *
+    pulsoActual;
+}
+
+
+// =====================================================
+// ESCENARIO
+// =====================================================
+
+function dibujarEscenario() {
+
+  var radioVision =
+    150;
+
+
+  for (
+    var t of triangulos
+  ) {
+
+    var d =
+      sk.dist(
+        jugadorX,
+        jugadorY,
+        t.x,
+        t.y
+      );
+
+
+    if (
+      d < radioVision
+    ) {
+
+      var a =
+        sk.map(
+          d,
+          0,
+          radioVision,
+          230,
+          0
+        );
+
+
+      t.mostrar(a);
+    }
+  }
+
+
+  var ds =
+    sk.dist(
+      jugadorX,
+      jugadorY,
+      salidaX,
+      salidaY
+    );
+
+
+  if (
+    ds < 80
+  ) {
+
+    var a =
+      sk.constrain(
+        sk.map(
+          ds,
+          80,
+          0,
+          40,
+          255
+        ),
+        40,
+        255
+      );
+
+
+    var s = 24;
+
+
+    sk.noStroke();
+
+
+    sk.fill(
+      255,
+      a * 0.08
+    );
+
+
+    sk.triangle(
+      salidaX,
+      salidaY -
+      s -
+      15,
+
+      salidaX -
+      s -
+      15,
+      salidaY +
+      s +
+      15,
+
+      salidaX +
+      s +
+      15,
+      salidaY +
+      s +
+      15
+    );
+
+
+    sk.fill(
+      190,
+      190,
+      200,
+      a
+    );
+
+
+    sk.triangle(
+      salidaX,
+      salidaY -
+      s,
+
+      salidaX -
+      s,
+      salidaY +
+      s,
+
+      salidaX +
+      s,
+      salidaY +
+      s
+    );
+  }
+}
+
+
+// =====================================================
+// AURA JUGADOR
+// =====================================================
+
+function dibujarAura() {
+
+  var p =
+    sk.sin(
+      tiempoPulso
+    );
+
+
+  var s =
+    sk.map(
+      p,
+      -1,
+      1,
+      45,
+      65
+    );
+
+
+  var a =
+    sk.map(
+      p,
+      -1,
+      1,
+      intensidadAura *
+      0.55,
+      intensidadAura
+    );
+
+
+  sk.noStroke();
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    a * 0.2
+  );
+
+
+  sk.ellipse(
+    jugadorX,
+    jugadorY,
+    s + 35,
+    s + 35
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    a
+  );
+
+
+  sk.ellipse(
+    jugadorX,
+    jugadorY,
+    s,
+    s
+  );
+}
+
+
+// =====================================================
+// JUGADOR
+// =====================================================
+
+function dibujarJugador() {
+
+  sk.noStroke();
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    25
+  );
+
+
+  sk.ellipse(
+    jugadorX,
+    jugadorY,
+    77,
+    77
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    45
+  );
+
+
+  sk.ellipse(
+    jugadorX,
+    jugadorY,
+    57,
+    57
+  );
+
+
+  sk.push();
+
+
+  sk.translate(
+    jugadorX,
+    jugadorY
+  );
+
+
+  sk.rotate(
+    sk.atan2(
+      objetivoY -
+      jugadorY,
+
+      objetivoX -
+      jugadorX
+    )
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220
+  );
+
+
+  sk.triangle(
+    18,
+    0,
+
+    -14,
+    -11,
+
+    -14,
+    11
+  );
+
+
+  sk.fill(
+    220,
+    180,
+    255,
+    180
+  );
+
+
+  sk.triangle(
+    10,
+    0,
+
+    -8,
+    -6,
+
+    -8,
+    6
+  );
+
+
+  sk.pop();
+}
+
+
+// =====================================================
+// SALIDA
+// =====================================================
+
+function comprobarSalida() {
+
+  if (
+    sk.dist(
+      jugadorX,
+      jugadorY,
+      salidaX,
+      salidaY
+    ) < 30
+  ) {
+
+    comenzarReinicio();
+  }
+}
+
+
+// =====================================================
+// ENEMIGO
+// =====================================================
+
+function comprobarEnemigo() {
+
+  if (
+    sk.dist(
+      jugadorX,
+      jugadorY,
+      enemigo.x,
+      enemigo.y
+    ) < 18
+  ) {
+
+    comenzarMuerte();
+  }
+}
+
+
+// =====================================================
+// MUERTE
+// =====================================================
+
+function comenzarMuerte() {
+
+  muerte = true;
+
+  tocando = false;
+
+  tiempoMuerte =
+    sk.millis();
+}
+
+
+function animarMuerte() {
+
+  var t =
+    sk.millis() -
+    tiempoMuerte;
+
+
+  if (
+    t < 180
+  ) {
+
+    sk.background(
+      150,
+      0,
+      255
+    );
+
+    return;
+  }
+
+
+  if (
+    t < 300
+  ) {
+
+    sk.background(255);
+
+    return;
+  }
+
+
+  if (
+    t < 420
+  ) {
+
+    sk.background(
+      150,
+      0,
+      255
+    );
+
+    return;
+  }
+
+
+  if (
+    t < 540
+  ) {
+
+    sk.background(255);
+
+    return;
+  }
+
+
+  if (
+    t <
+    duracionMuerte +
+    duracionNegro
+  ) {
+
+    sk.background(0);
+
+    return;
+  }
+
+
+  muerte = false;
+
+  iniciarNivel();
+}
+
+
+// =====================================================
+// REINICIO / VICTORIA
+// =====================================================
+
+function comenzarReinicio() {
+
+  reiniciando = true;
+
+  tocando = false;
+
+  tiempoReinicio =
+    sk.millis();
+}
+
+
+function animarReinicio() {
+
+  var progreso =
+    sk.constrain(
+      (
+        sk.millis() -
+        tiempoReinicio
+      ) /
+      3500,
+      0,
+      1
+    );
+
+
+  sk.background(0);
+
+  dibujarParticulas();
+
+
+  var centroX =
+    sk.width / 2;
+
+
+  var centroY =
+    sk.height / 2;
+
+
+  var opacidad =
+    sk.map(
+      progreso,
+      0,
+      1,
+      255,
+      0
+    );
+
+
+  var tamanoAura =
+    sk.min(
+      sk.width,
+      sk.height
+    ) *
+    0.16;
+
+
+  var tamano =
+    sk.min(
+      sk.width,
+      sk.height
+    ) *
+    0.115;
+
+
+  sk.noStroke();
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad *
+    0.15
+  );
+
+
+  sk.triangle(
+    centroX,
+    centroY -
+    tamanoAura / 2,
+
+    centroX -
+    tamanoAura / 2,
+    centroY +
+    tamanoAura / 2,
+
+    centroX +
+    tamanoAura / 2,
+    centroY +
+    tamanoAura / 2
+  );
+
+
+  sk.fill(
+    150,
+    50,
+    220,
+    opacidad
+  );
+
+
+  sk.triangle(
+    centroX,
+    centroY -
+    tamano / 2,
+
+    centroX -
+    tamano / 2,
+    centroY +
+    tamano / 2,
+
+    centroX +
+    tamano / 2,
+    centroY +
+    tamano / 2
+  );
+
+
+  if (
+    progreso >= 1
+  ) {
+
+    reiniciando = false;
+
+    iniciarNivel();
+  }
+}
+
+
+// =====================================================
+// TOUCH
+// =====================================================
+
+sk.touchStarted = function() {
+
+  activarFullscreenIncertidumbre();
+
+
+  if (
+    sk.touches.length > 0
+  ) {
+
+    actualizarObjetivoTouch(
+      sk.touches[0].x,
+      sk.touches[0].y
+    );
+
+
+    tocando = true;
+  }
+
+
+  return false;
+}
+
+
+sk.touchMoved = function() {
+
+  if (
+    reiniciando ||
+    muerte
+  ) {
+
+    return false;
+  }
+
+
+  if (
+    sk.touches.length > 0
+  ) {
+
+    actualizarObjetivoTouch(
+      sk.touches[0].x,
+      sk.touches[0].y
+    );
+
+
+    tocando = true;
+  }
+
+
+  return false;
+}
+
+
+sk.touchEnded = function() {
+
+  tocando = false;
+
+  return false;
+}
+
+
+// =====================================================
+// COORDENADAS TOUCH
+// =====================================================
+
+function actualizarObjetivoTouch(
+  pantallaX,
+  pantallaY
+) {
+
+  objetivoX =
+    (
+      pantallaX -
+      offsetXIncertidumbre
+    ) /
+    escalaIncertidumbre;
+
+
+  objetivoY =
+    (
+      pantallaY -
+      offsetYIncertidumbre
+    ) /
+    escalaIncertidumbre;
+
+
+  objetivoX =
+    sk.constrain(
+      objetivoX,
+      20,
+      680
+    );
+
+
+  objetivoY =
+    sk.constrain(
+      objetivoY,
+      20,
+      680
+    );
+}
+
+
+// =====================================================
+// FULLSCREEN
+// =====================================================
+
+function activarFullscreenIncertidumbre() {
+
+  if (
+    !fullscreenIncertidumbre
+  ) {
+
+    void 0;
+
+    fullscreenIncertidumbre =
+      true;
+  }
+}
+
+
+// =====================================================
+// RESIZE
+// =====================================================
+
+sk.windowResized = function() {
+
+  sk.resizeCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+
+  calcularEscalaIncertidumbre();
+
+  crearParticulas();
+}
+
+
+// =====================================================
+// TRIANGULO
+// =====================================================
+
+class Triangulo {
+
+  constructor(
+    x,
+    y,
+    tamano,
+    entidad
+  ) {
+
+    this.x = x;
+
+    this.y = y;
+
+    this.tamano = tamano;
+
+    this.entidad = entidad;
+
+    this.rotacion =
+      sk.random(sk.TWO_PI);
+
+    this.velocidadRotacion =
+      sk.random(
+        -0.01,
+        0.01
+      );
+
+    this.tiempoRuido =
+      sk.random(1000);
+  }
+
+
+  actualizar() {
+
+    this.rotacion +=
+      this.velocidadRotacion;
+
+
+    if (
+      !this.entidad
+    ) {
+
+      return;
+    }
+
+
+    this.tiempoRuido +=
+      0.08;
+
+
+    var dx =
+      jugadorX -
+      this.x;
+
+
+    var dy =
+      jugadorY -
+      this.y;
+
+
+    var d =
+      sk.sqrt(
+        dx * dx +
+        dy * dy
+      );
+
+
+    if (
+      d > 0.1
+    ) {
+
+      dx /= d;
+
+      dy /= d;
+
+
+      var ox =
+        sk.sin(
+          this.tiempoRuido *
+          2.7
+        ) *
+        0.65;
+
+
+      var oy =
+        sk.cos(
+          this.tiempoRuido *
+          3.4
+        ) *
+        0.65;
+
+
+      var mx =
+        dx +
+        ox;
+
+
+      var my =
+        dy +
+        oy;
+
+
+      var m =
+        sk.sqrt(
+          mx * mx +
+          my * my
+        );
+
+
+      mx /= m;
+
+      my /= m;
+
+
+      this.x +=
+        mx *
+        velocidadEnemigo;
+
+
+      this.y +=
+        my *
+        velocidadEnemigo;
+
+
+      this.x +=
+        sk.sin(
+          this.tiempoRuido *
+          5.7
+        ) *
+        0.45;
+
+
+      this.y +=
+        sk.cos(
+          this.tiempoRuido *
+          6.3
+        ) *
+        0.45;
+    }
+
+
+    this.rotacion +=
+      sk.sin(
+        this.tiempoRuido *
+        4
+      ) *
+      0.025;
+  }
+
+
+  mostrar(a) {
+
+    sk.push();
+
+
+    sk.translate(
+      this.x,
+      this.y
+    );
+
+
+    sk.rotate(
+      this.rotacion
+    );
+
+
+    sk.noStroke();
+
+
+    if (
+      this.entidad
+    ) {
+
+      sk.fill(
+        255,
+        0,
+        0,
+        a * 0.10
+      );
+
+
+      sk.triangle(
+        0,
+        -this.tamano / 2 - 35,
+
+        -this.tamano / 2 - 35,
+        this.tamano / 2 + 35,
+
+        this.tamano / 2 + 35,
+        this.tamano / 2 + 35
+      );
+
+
+      sk.fill(
+        255,
+        0,
+        0,
+        a * 0.18
+      );
+
+
+      sk.triangle(
+        0,
+        -this.tamano / 2 - 22,
+
+        -this.tamano / 2 - 22,
+        this.tamano / 2 + 22,
+
+        this.tamano / 2 + 22,
+        this.tamano / 2 + 22
+      );
+
+
+      sk.fill(
+        255,
+        0,
+        0,
+        a * 0.30
+      );
+
+
+      sk.triangle(
+        0,
+        -this.tamano / 2 - 10,
+
+        -this.tamano / 2 - 10,
+        this.tamano / 2 + 10,
+
+        this.tamano / 2 + 10,
+        this.tamano / 2 + 10
+      );
+
+
+      sk.fill(
+        255,
+        0,
+        0,
+        a
+      );
+
+
+      sk.triangle(
+        0,
+        -this.tamano / 2,
+
+        -this.tamano / 2,
+        this.tamano / 2,
+
+        this.tamano / 2,
+        this.tamano / 2
+      );
+
+
+      sk.fill(
+        255,
+        120,
+        120,
+        a * 0.65
+      );
+
+
+      sk.triangle(
+        0,
+        -this.tamano * 0.18,
+
+        -this.tamano * 0.18,
+        this.tamano * 0.18,
+
+        this.tamano * 0.18,
+        this.tamano * 0.18
+      );
+
+    } else {
+
+      sk.fill(
+        80,
+        80,
+        90,
+        a
+      );
+
+
+      sk.triangle(
+        0,
+        -this.tamano / 2,
+
+        -this.tamano / 2,
+        this.tamano / 2,
+
+        this.tamano / 2,
+        this.tamano / 2
+      );
+    }
+
+
+    sk.pop();
+  }
+}
+}
+function sketch_ansiedad(sk) {
+var lienzo;
+
+// =====================================================
+// ANSIEDAD
+// =====================================================
+
+var ansiedadValor = 0.5;
+
+var ansiedadVelocidadMovimiento = 3;
+var ansiedadVelocidadRotacion = 0.035;
+var ansiedadIntensidadTitileo = 0.8;
+var ansiedadIntensidadTemblor = 2;
+
+var ansiedadRotacion = 0;
+
+var ansiedadXMovimiento = 0;
+var ansiedadYMovimiento = 0;
+
+var ansiedadTamanoActual = 180;
+
+var ansiedadCalmando = false;
+var ansiedadRespirando = false;
+var ansiedadRegresando = false;
+
+var ansiedadTiempoRespiracion = 0;
+var ansiedadDuracionRespiracion = 3500;
+
+var ansiedadOpacidad = 255;
+
+var ansiedadUltimoClick = 0;
+var ansiedadIntervaloClick = 300;
+
+var ansiedadAlteracion = 0;
+
+var ansiedadParticulas = [];
+var ansiedadCantidadParticulas = 100;
+
+
+// =====================================================
+// TÁCTIL
+// =====================================================
+
+var ansiedadContactosAnteriores = [];
+var ansiedadFullscreen = false;
+
+
+// =====================================================
+// SETUP
+// =====================================================
+
+sk.setup = function() {
+
+  lienzo = sk.createCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+  lienzo.elt.style.touchAction = "none";
+
+  crearParticulasAnsiedad();
+}
+
+
+// =====================================================
+// DRAW
+// =====================================================
+
+sk.draw = function() {
+
+  sk.background(0);
+
+  dibujarParticulasAnsiedad();
+
+  actualizarTouchAnsiedad();
+
+
+  if (
+    !ansiedadRespirando &&
+    !ansiedadRegresando
+  ) {
+
+    actualizarAnsiedad();
+
+  }
+
+  else if (
+    ansiedadRespirando
+  ) {
+
+    actualizarRespiracionAnsiedad();
+
+  }
+
+  else if (
+    ansiedadRegresando
+  ) {
+
+    actualizarRegresoAnsiedad();
+  }
+
+
+  dibujarTrianguloAnsiedad();
+}
+
+
+// =====================================================
+// PARTÍCULAS
+// =====================================================
+
+function crearParticulasAnsiedad() {
+
+  ansiedadParticulas = [];
+
+  for (
+    var i = 0;
+    i < ansiedadCantidadParticulas;
+    i++
+  ) {
+
+    ansiedadParticulas.push({
+
+      x: sk.random(sk.width),
+      y: sk.random(sk.height),
+
+      vx: sk.random(
+        -0.12,
+        0.12
+      ),
+
+      vy: sk.random(
+        -0.12,
+        0.12
+      ),
+
+      tamano: sk.random(
+        1,
+        3
+      ),
+
+      opacidad: sk.random(
+        15,
+        55
+      )
+    });
+  }
+}
+
+
+function dibujarParticulasAnsiedad() {
+
+  sk.noStroke();
+
+  for (
+    var i = 0;
+    i < ansiedadParticulas.length;
+    i++
+  ) {
+
+    var p =
+      ansiedadParticulas[i];
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+
+    if (p.x < 0) {
+      p.x = sk.width;
+    }
+
+    if (p.x > sk.width) {
+      p.x = 0;
+    }
+
+    if (p.y < 0) {
+      p.y = sk.height;
+    }
+
+    if (p.y > sk.height) {
+      p.y = 0;
+    }
+
+
+    sk.fill(
+      150,
+      150,
+      160,
+      p.opacidad
+    );
+
+
+    sk.ellipse(
+      p.x,
+      p.y,
+      p.tamano,
+      p.tamano
+    );
+  }
+}
+
+
+// =====================================================
+// ANSIEDAD
+// =====================================================
+
+function actualizarAnsiedad() {
+
+  if (ansiedadCalmando) {
+
+    ansiedadValor -=
+      0.006;
+
+    ansiedadAlteracion -=
+      0.003;
+
+  }
+
+  else {
+
+    ansiedadValor +=
+      0.0003;
+  }
+
+
+  ansiedadValor =
+    sk.constrain(
+      ansiedadValor,
+      0,
+      1
+    );
+
+
+  ansiedadAlteracion =
+    sk.constrain(
+      ansiedadAlteracion,
+      0,
+      1
+    );
+
+
+  ansiedadVelocidadMovimiento =
+    sk.lerp(
+      0,
+      7,
+      ansiedadValor
+    );
+
+
+  ansiedadVelocidadRotacion =
+    sk.lerp(
+      0,
+      0.12,
+      ansiedadValor
+    );
+
+
+  ansiedadIntensidadTitileo =
+    sk.lerp(
+      0.2,
+      2.5,
+      ansiedadValor
+    );
+
+
+  ansiedadIntensidadTemblor =
+    sk.lerp(
+      0,
+      18,
+      ansiedadValor
+    );
+
+
+  ansiedadVelocidadMovimiento +=
+    ansiedadAlteracion * 5;
+
+
+  ansiedadVelocidadRotacion +=
+    ansiedadAlteracion * 0.18;
+
+
+  ansiedadIntensidadTemblor +=
+    ansiedadAlteracion * 30;
+
+
+  ansiedadRotacion +=
+    ansiedadVelocidadRotacion;
+
+
+  if (
+    ansiedadAlteracion > 0
+  ) {
+
+    ansiedadRotacion +=
+      sk.random(
+        -ansiedadAlteracion * 0.12,
+        ansiedadAlteracion * 0.12
+      );
+
+
+    if (
+      ansiedadAlteracion > 0.65 &&
+      sk.random(1) <
+      ansiedadAlteracion * 0.08
+    ) {
+
+      ansiedadRotacion +=
+        sk.random(
+          -0.8,
+          0.8
+        );
+    }
+  }
+
+
+  var movimientoX =
+    sk.random(
+      -ansiedadIntensidadTemblor,
+      ansiedadIntensidadTemblor
+    );
+
+
+  var movimientoY =
+    sk.random(
+      -ansiedadIntensidadTemblor,
+      ansiedadIntensidadTemblor
+    );
+
+
+  ansiedadXMovimiento =
+    sk.lerp(
+      ansiedadXMovimiento,
+      movimientoX,
+      0.15 +
+      ansiedadAlteracion * 0.08
+    );
+
+
+  ansiedadYMovimiento =
+    sk.lerp(
+      ansiedadYMovimiento,
+      movimientoY,
+      0.15 +
+      ansiedadAlteracion * 0.08
+    );
+
+
+  var cambioTamano =
+    sk.sin(
+      sk.millis() *
+      0.025 *
+      ansiedadValor
+    );
+
+
+  ansiedadTamanoActual =
+    ansiedadTamanoBase() +
+    cambioTamano *
+    ansiedadValor *
+    ansiedadTamanoBase() *
+    0.25;
+
+
+  if (
+    ansiedadValor <=
+    0.01
+  ) {
+
+    ansiedadValor = 0;
+
+    ansiedadAlteracion = 0;
+
+    ansiedadXMovimiento = 0;
+
+    ansiedadYMovimiento = 0;
+
+    ansiedadRotacion = 0;
+
+    ansiedadTamanoActual =
+      ansiedadTamanoBase();
+
+    ansiedadRespirando = true;
+
+    ansiedadTiempoRespiracion =
+      sk.millis();
+  }
+}
+
+
+// =====================================================
+// TAMAÑO ADAPTATIVO
+// =====================================================
+
+function ansiedadTamanoBase() {
+
+  return sk.min(
+    sk.width,
+    sk.height
+  ) * 0.25;
+}
+
+
+// =====================================================
+// RESPIRACIÓN
+// =====================================================
+
+function actualizarRespiracionAnsiedad() {
+
+  var progreso =
+    (
+      sk.millis() -
+      ansiedadTiempoRespiracion
+    ) /
+    ansiedadDuracionRespiracion;
+
+
+  var respiracion =
+    sk.sin(
+      progreso *
+      sk.TWO_PI *
+      2
+    );
+
+
+  ansiedadOpacidad =
+    sk.map(
+      respiracion,
+      -1,
+      1,
+      120,
+      255
+    );
+
+
+  ansiedadTamanoActual =
+    sk.map(
+      respiracion,
+      -1,
+      1,
+      ansiedadTamanoBase() * 0.97,
+      ansiedadTamanoBase() * 1.03
+    );
+
+
+  ansiedadXMovimiento = 0;
+
+  ansiedadYMovimiento = 0;
+
+  ansiedadRotacion = 0;
+
+  ansiedadAlteracion = 0;
+
+
+  if (
+    progreso >= 1
+  ) {
+
+    ansiedadRespirando = false;
+
+    ansiedadRegresando = true;
+
+    ansiedadValor = 0;
+  }
+}
+
+
+// =====================================================
+// REGRESO
+// =====================================================
+
+function actualizarRegresoAnsiedad() {
+
+  ansiedadValor +=
+    0.004;
+
+
+  ansiedadValor =
+    sk.constrain(
+      ansiedadValor,
+      0,
+      1
+    );
+
+
+  ansiedadVelocidadMovimiento =
+    sk.lerp(
+      0,
+      7,
+      ansiedadValor
+    );
+
+
+  ansiedadVelocidadRotacion =
+    sk.lerp(
+      0,
+      0.12,
+      ansiedadValor
+    );
+
+
+  ansiedadIntensidadTitileo =
+    sk.lerp(
+      0.2,
+      2.5,
+      ansiedadValor
+    );
+
+
+  ansiedadIntensidadTemblor =
+    sk.lerp(
+      0,
+      18,
+      ansiedadValor
+    );
+
+
+  ansiedadRotacion +=
+    ansiedadVelocidadRotacion;
+
+
+  var movimientoX =
+    sk.random(
+      -ansiedadIntensidadTemblor,
+      ansiedadIntensidadTemblor
+    );
+
+
+  var movimientoY =
+    sk.random(
+      -ansiedadIntensidadTemblor,
+      ansiedadIntensidadTemblor
+    );
+
+
+  ansiedadXMovimiento =
+    sk.lerp(
+      ansiedadXMovimiento,
+      movimientoX,
+      0.15
+    );
+
+
+  ansiedadYMovimiento =
+    sk.lerp(
+      ansiedadYMovimiento,
+      movimientoY,
+      0.15
+    );
+
+
+  ansiedadTamanoActual =
+    ansiedadTamanoBase() +
+    sk.sin(
+      sk.millis() *
+      0.025 *
+      ansiedadValor
+    ) *
+    ansiedadValor *
+    ansiedadTamanoBase() *
+    0.25;
+
+
+  ansiedadOpacidad = 255;
+
+
+  if (
+    ansiedadValor >= 1
+  ) {
+
+    ansiedadValor = 1;
+
+    ansiedadRegresando = false;
+  }
+}
+
+
+// =====================================================
+// TRIÁNGULO
+// =====================================================
+
+function dibujarTrianguloAnsiedad() {
+
+  var titileo =
+    sk.sin(
+      sk.millis() *
+      0.025 *
+      ansiedadIntensidadTitileo
+    );
+
+
+  if (
+    !ansiedadRespirando
+  ) {
+
+    ansiedadOpacidad =
+      sk.map(
+        titileo,
+        -1,
+        1,
+        50,
+        255
+      );
+  }
+
+
+  var rojo =
+    sk.lerp(
+      150,
+      255,
+      ansiedadAlteracion
+    );
+
+
+  var verde =
+    sk.lerp(
+      50,
+      0,
+      ansiedadAlteracion
+    );
+
+
+  var azul =
+    sk.lerp(
+      220,
+      0,
+      ansiedadAlteracion
+    );
+
+
+  var x =
+    sk.width / 2 +
+    ansiedadXMovimiento;
+
+  var y =
+    sk.height / 2 +
+    ansiedadYMovimiento;
+
+  var tamano =
+    ansiedadTamanoActual;
+
+
+  sk.push();
+
+  sk.translate(
+    x,
+    y
+  );
+
+  sk.rotate(
+    ansiedadRotacion
+  );
+
+  sk.noStroke();
+
+
+  // Aura cercana
+
+  sk.fill(
+    rojo,
+    verde,
+    azul,
+    ansiedadOpacidad * 0.06
+  );
+
+
+  sk.triangle(
+    0,
+    -tamano / 2 - 25,
+
+    -tamano / 2 - 25,
+    tamano / 2 + 25,
+
+    tamano / 2 + 25,
+    tamano / 2 + 25
+  );
+
+
+  // Aura media
+
+  sk.fill(
+    rojo,
+    verde,
+    azul,
+    ansiedadOpacidad * 0.035
+  );
+
+
+  sk.triangle(
+    0,
+    -tamano / 2 - 45,
+
+    -tamano / 2 - 45,
+    tamano / 2 + 45,
+
+    tamano / 2 + 45,
+    tamano / 2 + 45
+  );
+
+
+  // Triángulo principal
+
+  sk.fill(
+    rojo,
+    verde,
+    azul,
+    ansiedadOpacidad
+  );
+
+
+  sk.triangle(
+    0,
+    -tamano / 2,
+
+    -tamano / 2,
+    tamano / 2,
+
+    tamano / 2,
+    tamano / 2
+  );
+
+
+  sk.pop();
+}
+
+
+// =====================================================
+// INTERACCIÓN TÁCTIL
+// =====================================================
+
+function actualizarTouchAnsiedad() {
+
+  ansiedadCalmando = false;
+
+
+  // ---------------------------------------------------
+  // Si no hay dedos
+  // ---------------------------------------------------
+
+  if (
+    sk.touches.length == 0
+  ) {
+
+    ansiedadContactosAnteriores = [];
+
+    return;
+  }
+
+
+  // ---------------------------------------------------
+  // Buscar todos los dedos que estén sobre el triángulo
+  // ---------------------------------------------------
+
+  var contactosActuales = [];
+
+
+  for (
+    var i = 0;
+    i < sk.touches.length;
+    i++
+  ) {
+
+    var t =
+      sk.touches[i];
+
+
+    var distancia =
+      sk.dist(
+        t.x,
+        t.y,
+        sk.width / 2 +
+        ansiedadXMovimiento,
+        sk.height / 2 +
+        ansiedadYMovimiento
+      );
+
+
+    if (
+      distancia <
+      ansiedadTamanoActual / 2
+    ) {
+
+      ansiedadCalmando = true;
+
+      contactosActuales.push(
+        t.id
+      );
+
+
+      // -----------------------------------------------
+      // ¿Es un dedo nuevo?
+      // -----------------------------------------------
+
+      var contactoNuevo =
+        ansiedadContactosAnteriores.indexOf(
+          t.id
+        ) == -1;
+
+
+      if (
+        contactoNuevo
+      ) {
+
+        procesarToqueAnsiedad();
+      }
+    }
+  }
+
+
+  ansiedadContactosAnteriores =
+    contactosActuales;
+}
+
+
+// =====================================================
+// PROCESAR TOQUE
+// =====================================================
+
+function procesarToqueAnsiedad() {
+
+  if (
+    ansiedadRespirando ||
+    ansiedadRegresando
+  ) {
+
+    return;
+  }
+
+
+  var ahora =
+    sk.millis();
+
+
+  // Dos toques rápidos aumentan la ansiedad
+
+  if (
+    ahora -
+    ansiedadUltimoClick <
+    ansiedadIntervaloClick
+  ) {
+
+    ansiedadValor +=
+      0.18;
+
+
+    ansiedadAlteracion +=
+      0.12;
+
+
+    ansiedadValor =
+      sk.constrain(
+        ansiedadValor,
+        0,
+        1
+      );
+
+
+    ansiedadAlteracion =
+      sk.constrain(
+        ansiedadAlteracion,
+        0,
+        1
+      );
+  }
+
+
+  ansiedadUltimoClick =
+    ahora;
+}
+
+
+// =====================================================
+// PRIMER TOQUE
+// =====================================================
+
+sk.touchStarted = function() {
+
+  if (
+    !ansiedadFullscreen
+  ) {
+
+    void 0;
+
+    ansiedadFullscreen = true;
+  }
+
+
+  return false;
+}
+
+
+// =====================================================
+// MOVIMIENTO DEL DEDO
+// =====================================================
+
+sk.touchMoved = function() {
+
+  return false;
+}
+
+
+// =====================================================
+// LEVANTAR DEDO
+// =====================================================
+
+sk.touchEnded = function() {
+
+  return false;
+}
+
+
+// =====================================================
+// CAMBIO DE TAMAÑO
+// =====================================================
+
+sk.windowResized = function() {
+
+  sk.resizeCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+  crearParticulasAnsiedad();
+
+  ansiedadTamanoActual =
+    ansiedadTamanoBase();
+}
+}
+function sketch_expectativa(sk) {
+var expectativaZoom = 1;
+var expectativaVelocidadZoom = 0.004;
+var expectativaRelacionPequeno = 0.025;
+var expectativaTamanoBase = 900;
+
+var expectativaNivel = 0;
+var expectativaFondoGris = false;
+
+var expectativaParticulas = [];
+var expectativaCantidadParticulas = 100;
+
+// CONTROL TÁCTIL
+var expectativaArrastrando = false;
+var expectativaUltimoY = 0;
+
+
+sk.setup = function() {
+
+  sk.createCanvas(_anchoVentana(sk), _altoVentana(sk));
+
+  crearParticulasExpectativa();
+
+  crearNivelExpectativa();
+}
+
+
+sk.draw = function() {
+
+  var tamano =
+    expectativaTamanoBase *
+    expectativaRelacionPequeno *
+    expectativaZoom;
+
+
+  if (expectativaFondoGris) {
+
+    dibujarFondoGris();
+
+    dibujarTrianguloNegro(tamano);
+
+    dibujarParticulasDentro(tamano);
+
+  } else {
+
+    sk.background(0);
+
+    dibujarParticulasFondo();
+
+    dibujarTrianguloGris(tamano);
+  }
+}
+
+
+// ==============================
+// FONDO GRIS
+// ==============================
+
+function dibujarFondoGris() {
+
+  sk.background(90);
+
+  var cx = sk.width / 2;
+  var cy = sk.height / 2;
+
+  var tamano =
+    obtenerTamanoExpectativa();
+
+
+  sk.noStroke();
+
+
+  sk.fill(
+    0,
+    0,
+    0,
+    12
+  );
+
+  sk.triangle(
+    cx,
+    cy - tamano / 2 - 45,
+
+    cx - tamano / 2 - 45,
+    cy + tamano / 2 + 45,
+
+    cx + tamano / 2 + 45,
+    cy + tamano / 2 + 45
+  );
+
+
+  sk.fill(
+    0,
+    0,
+    0,
+    18
+  );
+
+  sk.triangle(
+    cx,
+    cy - tamano / 2 - 28,
+
+    cx - tamano / 2 - 28,
+    cy + tamano / 2 + 28,
+
+    cx + tamano / 2 + 28,
+    cy + tamano / 2 + 28
+  );
+
+
+  sk.fill(
+    0,
+    0,
+    0,
+    25
+  );
+
+  sk.triangle(
+    cx,
+    cy - tamano / 2 - 12,
+
+    cx - tamano / 2 - 12,
+    cy + tamano / 2 + 12,
+
+    cx + tamano / 2 + 12,
+    cy + tamano / 2 + 12
+  );
+
+
+  var pulso =
+    sk.sin(sk.millis() * 0.002);
+
+
+  var brillo =
+    sk.map(
+      pulso,
+      -1,
+      1,
+      0,
+      12
+    );
+
+
+  sk.fill(
+    90 + brillo,
+    90 + brillo,
+    95 + brillo
+  );
+
+
+  sk.triangle(
+    cx,
+    cy - tamano / 2,
+
+    cx - tamano / 2,
+    cy + tamano / 2,
+
+    cx + tamano / 2,
+    cy + tamano / 2
+  );
+}
+
+
+// ==============================
+// TAMAÑO
+// ==============================
+
+function obtenerTamanoExpectativa() {
+
+  return (
+    expectativaTamanoBase *
+    expectativaRelacionPequeno *
+    expectativaZoom
+  );
+}
+
+
+// ==============================
+// TRIÁNGULO GRIS
+// ==============================
+
+function dibujarTrianguloGris(tamano) {
+
+  var cx = sk.width / 2;
+  var cy = sk.height / 2;
+
+
+  var pulso =
+    sk.sin(sk.millis() * 0.002);
+
+
+  var brillo =
+    sk.map(
+      pulso,
+      -1,
+      1,
+      0,
+      12
+    );
+
+
+  sk.noStroke();
+
+
+  sk.fill(
+    120 + brillo,
+    120 + brillo,
+    125 + brillo,
+    35
+  );
+
+
+  sk.triangle(
+    cx,
+    cy - tamano / 2 - 40,
+
+    cx - tamano / 2 - 40,
+    cy + tamano / 2 + 40,
+
+    cx + tamano / 2 + 40,
+    cy + tamano / 2 + 40
+  );
+
+
+  sk.fill(
+    160 + brillo,
+    160 + brillo,
+    165 + brillo,
+    55
+  );
+
+
+  sk.triangle(
+    cx,
+    cy - tamano / 2 - 25,
+
+    cx - tamano / 2 - 25,
+    cy + tamano / 2 + 25,
+
+    cx + tamano / 2 + 25,
+    cy + tamano / 2 + 25
+  );
+
+
+  sk.fill(
+    200 + brillo,
+    200 + brillo,
+    205 + brillo,
+    30
+  );
+
+
+  sk.triangle(
+    cx,
+    cy - tamano / 2 - 12,
+
+    cx - tamano / 2 - 12,
+    cy + tamano / 2 + 12,
+
+    cx + tamano / 2 + 12,
+    cy + tamano / 2 + 12
+  );
+
+
+  sk.fill(
+    90 + brillo,
+    90 + brillo,
+    95 + brillo
+  );
+
+
+  sk.triangle(
+    cx,
+    cy - tamano / 2,
+
+    cx - tamano / 2,
+    cy + tamano / 2,
+
+    cx + tamano / 2,
+    cy + tamano / 2
+  );
+}
+
+
+// ==============================
+// TRIÁNGULO NEGRO
+// ==============================
+
+function dibujarTrianguloNegro(tamano) {
+
+  var cx = sk.width / 2;
+  var cy = sk.height / 2;
+
+
+  sk.noStroke();
+
+  sk.fill(0);
+
+
+  sk.triangle(
+    cx,
+    cy - tamano / 2,
+
+    cx - tamano / 2,
+    cy + tamano / 2,
+
+    cx + tamano / 2,
+    cy + tamano / 2
+  );
+}
+
+
+// ==============================
+// PARTÍCULAS
+// ==============================
+
+function crearParticulasExpectativa() {
+
+  expectativaParticulas = [];
+
+
+  for (
+    var i = 0;
+    i < expectativaCantidadParticulas;
+    i++
+  ) {
+
+    expectativaParticulas.push({
+
+      x: sk.random(sk.width),
+
+      y: sk.random(sk.height),
+
+      vx: sk.random(
+        -0.15,
+        0.15
+      ),
+
+      vy: sk.random(
+        -0.15,
+        0.15
+      ),
+
+      tamano: sk.random(
+        1,
+        3
+      ),
+
+      opacidad: sk.random(
+        20,
+        70
+      )
+    });
+  }
+}
+
+
+function actualizarParticula(p) {
+
+  p.x += p.vx;
+  p.y += p.vy;
+
+
+  if (p.x < 0) {
+
+    p.x = sk.width;
+  }
+
+
+  if (p.x > sk.width) {
+
+    p.x = 0;
+  }
+
+
+  if (p.y < 0) {
+
+    p.y = sk.height;
+  }
+
+
+  if (p.y > sk.height) {
+
+    p.y = 0;
+  }
+}
+
+
+function dibujarParticulasFondo() {
+
+  sk.noStroke();
+
+
+  for (
+    var i = 0;
+    i < expectativaParticulas.length;
+    i++
+  ) {
+
+    var p =
+      expectativaParticulas[i];
+
+
+    actualizarParticula(p);
+
+
+    sk.fill(
+      170,
+      170,
+      180,
+      p.opacidad
+    );
+
+
+    sk.ellipse(
+      p.x,
+      p.y,
+      p.tamano,
+      p.tamano
+    );
+  }
+}
+
+
+// ==============================
+// DETECTAR PARTÍCULAS DENTRO
+// ==============================
+
+function puntoDentroTriangulo(
+  px,
+  py,
+  tamano
+) {
+
+  var cx =
+    sk.width / 2;
+
+  var cy =
+    sk.height / 2;
+
+
+  var ax =
+    cx;
+
+  var ay =
+    cy - tamano / 2;
+
+
+  var bx =
+    cx - tamano / 2;
+
+  var by =
+    cy + tamano / 2;
+
+
+  var cX =
+    cx + tamano / 2;
+
+  var cY =
+    cy + tamano / 2;
+
+
+  var area =
+    sk.abs(
+      (
+        ax * (by - cY) +
+        bx * (cY - ay) +
+        cX * (ay - by)
+      ) / 2
+    );
+
+
+  var area1 =
+    sk.abs(
+      (
+        px * (by - cY) +
+        bx * (cY - py) +
+        cX * (py - by)
+      ) / 2
+    );
+
+
+  var area2 =
+    sk.abs(
+      (
+        ax * (py - cY) +
+        px * (cY - ay) +
+        cX * (ay - py)
+      ) / 2
+    );
+
+
+  var area3 =
+    sk.abs(
+      (
+        ax * (by - py) +
+        bx * (py - ay) +
+        px * (ay - by)
+      ) / 2
+    );
+
+
+  return (
+    sk.abs(
+      area -
+      (
+        area1 +
+        area2 +
+        area3
+      )
+    ) < 1
+  );
+}
+
+
+function dibujarParticulasDentro(tamano) {
+
+  sk.noStroke();
+
+
+  for (
+    var i = 0;
+    i < expectativaParticulas.length;
+    i++
+  ) {
+
+    var p =
+      expectativaParticulas[i];
+
+
+    actualizarParticula(p);
+
+
+    if (
+      puntoDentroTriangulo(
+        p.x,
+        p.y,
+        tamano
+      )
+    ) {
+
+      sk.fill(
+        190,
+        190,
+        200,
+        p.opacidad
+      );
+
+
+      sk.ellipse(
+        p.x,
+        p.y,
+        p.tamano,
+        p.tamano
+      );
+    }
+  }
+}
+
+
+// ==============================
+// CONTROL TÁCTIL
+// ==============================
+
+sk.touchStarted = function() {
+
+  expectativaArrastrando = true;
+
+  expectativaUltimoY = sk.touches.length > 0
+    ? sk.touches[0].y
+    : sk.mouseY;
+
+  return false;
+}
+
+
+sk.touchMoved = function() {
+
+  if (!expectativaArrastrando) {
+    return false;
+  }
+
+
+  var actualY =
+    sk.touches.length > 0
+      ? sk.touches[0].y
+      : sk.mouseY;
+
+
+  var movimiento =
+    expectativaUltimoY -
+    actualY;
+
+
+  expectativaZoom +=
+    movimiento *
+    expectativaVelocidadZoom *
+    5;
+
+
+  expectativaZoom =
+    sk.constrain(
+      expectativaZoom,
+      1,
+      45
+    );
+
+
+  expectativaUltimoY =
+    actualY;
+
+
+  if (
+    expectativaZoom >= 45
+  ) {
+
+    crearNivelExpectativa();
+  }
+
+
+  return false;
+}
+
+
+sk.touchEnded = function() {
+
+  expectativaArrastrando = false;
+
+  return false;
+}
+
+
+// ==============================
+// COMPATIBILIDAD CON MOUSE
+// ==============================
+
+sk.mousePressed = function() {
+
+  expectativaArrastrando = true;
+
+  expectativaUltimoY = sk.mouseY;
+}
+
+
+sk.mouseDragged = function() {
+
+  if (!expectativaArrastrando) {
+    return;
+  }
+
+
+  var movimiento =
+    expectativaUltimoY -
+    sk.mouseY;
+
+
+  expectativaZoom +=
+    movimiento *
+    expectativaVelocidadZoom *
+    5;
+
+
+  expectativaZoom =
+    sk.constrain(
+      expectativaZoom,
+      1,
+      45
+    );
+
+
+  expectativaUltimoY =
+    sk.mouseY;
+
+
+  if (
+    expectativaZoom >= 45
+  ) {
+
+    crearNivelExpectativa();
+  }
+}
+
+
+sk.mouseReleased = function() {
+
+  expectativaArrastrando = false;
+}
+
+
+// ==============================
+// CAMBIO DE TAMAÑO DE PANTALLA
+// ==============================
+
+sk.windowResized = function() {
+
+  sk.resizeCanvas(
+    _anchoVentana(sk),
+    _altoVentana(sk)
+  );
+
+
+  crearParticulasExpectativa();
+}
+
+
+// ==============================
+// NUEVO NIVEL
+// ==============================
+
+function crearNivelExpectativa() {
+
+  expectativaNivel++;
+
+  expectativaZoom = 1;
+
+  expectativaFondoGris =
+    expectativaNivel % 2 === 0;
+}
+}
+
+// =====================================================
+// TAMAÑO "VENTANA" REDIRIGIDO AL CONTENEDOR
+// =====================================================
+// Los sketches originales usan windowWidth/windowHeight pensando en
+// ocupar toda la pantalla. Acá los redirigimos al tamaño real de la
+// celdita (mini-preview) o del recuadro de pantalla completa, para
+// que cada una de las 9 instancias dibuje a la resolución que
+// realmente necesita (y no a resolución de ventana completa x9).
+
+function _anchoVentana(sk) {
+  if (sk._contenedor) {
+    return Math.max(1, Math.round(sk._contenedor.clientWidth));
+  }
+  return window.innerWidth;
+}
+
+function _altoVentana(sk) {
+  if (sk._contenedor) {
+    return Math.max(1, Math.round(sk._contenedor.clientHeight));
+  }
+  return window.innerHeight;
+}
+
+function envolverConContenedor(factory, contenedor) {
+  return function (sk) {
+    sk._contenedor = contenedor;
+    factory(sk);
+  };
+}
+
+// Las mini-previews de la grilla son puramente ambientales: no
+// necesitan tocar/clickear nada. Si dejamos sus manejadores de
+// touch/mouse originales (pensados para la versión de pantalla
+// completa), en celulares el touchstart/touchmove del sketch de
+// fondo puede hacer preventDefault() y cancelar el "click" que el
+// navegador genera después de tocar, impidiendo abrir la celda.
+// Por eso acá los anulamos apenas se crea la instancia.
+function envolverParaPreview(factory, contenedor) {
+  return function (sk) {
+    sk._contenedor = contenedor;
+    factory(sk);
+
+    sk.touchStarted = undefined;
+    sk.touchMoved = undefined;
+    sk.touchEnded = undefined;
+    sk.mousePressed = undefined;
+    sk.mouseDragged = undefined;
+    sk.mouseReleased = undefined;
+    sk.mouseClicked = undefined;
+    sk.keyPressed = undefined;
+    sk.keyReleased = undefined;
+  };
+}
+
+// =====================================================
+// APP: panel 3x3 + pantalla completa
+// =====================================================
+
+var CONCEPTOS = [
+  { id: "memoria",       nombre: "memoria",       factory: sketch_memoria },
+  { id: "herencia",      nombre: "herencia",      factory: sketch_herencia },
+  { id: "caducidad",     nombre: "caducidad",     factory: sketch_caducidad },
+  { id: "identidad",     nombre: "identidad",     factory: sketch_identidad },
+  { id: "empatia",       nombre: "empatía",       factory: sketch_empatia },
+  { id: "colaboracion",  nombre: "colaboración",  factory: sketch_colaboracion },
+  { id: "incertidumbre", nombre: "incertidumbre", factory: sketch_incertidumbre },
+  { id: "ansiedad",      nombre: "ansiedad",      factory: sketch_ansiedad },
+  { id: "expectativa",   nombre: "expectativa",   factory: sketch_expectativa }
+];
+
+var grid = document.getElementById("grid");
+var fullscreen = document.getElementById("fullscreen");
+var fsWrap = document.getElementById("fs-canvas-wrap");
+var fsLabel = document.getElementById("fsLabel");
+var menuBtn = document.getElementById("menuBtn");
+
+var instanciaFullscreen = null;
+
+CONCEPTOS.forEach(function (concepto, i) {
+
+  var tile = document.createElement("div");
+  tile.className = "tile";
+  tile.setAttribute("role", "button");
+  tile.setAttribute("tabindex", "0");
+  tile.setAttribute("aria-label", "Abrir " + concepto.nombre);
+  tile.dataset.id = concepto.id;
+
+  var canvasWrap = document.createElement("div");
+  canvasWrap.className = "canvas-wrap";
+  tile.appendChild(canvasWrap);
+
+  var veil = document.createElement("div");
+  veil.className = "veil";
+  tile.appendChild(veil);
+
+  var label = document.createElement("div");
+  label.className = "label";
+
+  var num = document.createElement("span");
+  num.className = "num";
+  num.textContent = String(i + 1).padStart(2, "0");
+
+  var name = document.createElement("span");
+  name.className = "name";
+  name.textContent = concepto.nombre;
+
+  label.appendChild(num);
+  label.appendChild(name);
+  tile.appendChild(label);
+
+  grid.appendChild(tile);
+
+  // Mini sketch ambiental, no interactivo (el canvas tiene pointer-events:none)
+  try {
+    new p5(envolverParaPreview(concepto.factory, canvasWrap), canvasWrap);
+  } catch (e) {
+    console.error("Error iniciando preview de " + concepto.id, e);
+  }
+
+  function abrir() {
+    abrirPantallaCompleta(concepto);
+  }
+
+  // En algunos navegadores móviles el "click" sintético después de
+  // un toque puede no dispararse. Usamos touchend como vía directa
+  // y evitamos que despue el click duplique la apertura.
+  var abiertoPorTouch = false;
+
+  tile.addEventListener(
+    "touchend",
+    function (e) {
+      e.preventDefault();
+      abiertoPorTouch = true;
+      abrir();
+      setTimeout(function () {
+        abiertoPorTouch = false;
+      }, 600);
+    },
+    { passive: false }
+  );
+
+  tile.addEventListener("click", function () {
+    if (abiertoPorTouch) {
+      return;
+    }
+    abrir();
+  });
+
+  tile.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      abrir();
+    }
+  });
+});
+
+function abrirPantallaCompleta(concepto) {
+
+  if (instanciaFullscreen) {
+    instanciaFullscreen.remove();
+    instanciaFullscreen = null;
+  }
+
+  fsWrap.innerHTML = "";
+  fsLabel.textContent = concepto.nombre;
+
+  instanciaFullscreen = new p5(envolverConContenedor(concepto.factory, fsWrap), fsWrap);
+
+  fullscreen.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function cerrarPantallaCompleta() {
+
+  if (instanciaFullscreen) {
+    instanciaFullscreen.remove();
+    instanciaFullscreen = null;
+  }
+
+  fsWrap.innerHTML = "";
+  fullscreen.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+// El sketch activo en pantalla completa escucha eventos táctiles
+// clásicos (touchstart/touchmove/touchend) a nivel de documento, y
+// eso puede tragarse el toque incluso cuando el dedo cae sobre el
+// botón de menú. Los Pointer Events son un sistema aparte que los
+// sketches nunca usan, así que no pueden interceptarlo: por eso el
+// botón se maneja principalmente con "pointerup".
+var menuYaAccionado = false;
+
+function activarMenuYaAccionado() {
+  menuYaAccionado = true;
+  setTimeout(function () {
+    menuYaAccionado = false;
+  }, 600);
+}
+
+if (window.PointerEvent) {
+
+  menuBtn.addEventListener(
+    "pointerup",
+    function (e) {
+      e.preventDefault();
+      activarMenuYaAccionado();
+      cerrarPantallaCompleta();
+    },
+    { passive: false }
+  );
+}
+
+// Respaldo para navegadores sin Pointer Events (muy poco comunes).
+menuBtn.addEventListener(
+  "touchend",
+  function (e) {
+    if (menuYaAccionado) {
+      return;
+    }
+    e.preventDefault();
+    activarMenuYaAccionado();
+    cerrarPantallaCompleta();
+  },
+  { passive: false }
+);
+
+menuBtn.addEventListener("click", function () {
+  if (menuYaAccionado) {
+    return;
+  }
+  cerrarPantallaCompleta();
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape" && fullscreen.classList.contains("open")) {
+    cerrarPantallaCompleta();
+  }
+});
+
+</script>
+</body>
+</html>
