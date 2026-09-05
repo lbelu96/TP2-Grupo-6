@@ -1383,6 +1383,8 @@ function empezarJuego() {
 function sketch_herencia(sk) {
 var herenciaPadre;
 
+var herenciaPadreYInicio = 180;
+
 var herenciaHerederos = [];
 
 var herenciaParticulas = [];
@@ -1470,6 +1472,8 @@ sk.draw = function() {
 
     actualizarParticulasHerencia();
 
+    actualizarEscalaHerederosHerencia();
+
     comprobarColisionParticulasHerencia();
 
     dibujarPadreHerencia();
@@ -1549,17 +1553,27 @@ function iniciarHerencia() {
 // PADRE
 // =====================================================
 
+// =====================================================
+// POSICION VERTICAL DEL PADRE (RESPONSIVE)
+// =====================================================
+
+function calcularYPadreHerencia() {
+
+  return sk.constrain(
+    sk.height * 0.22,
+    herenciaTamanoPadre / 2 + 15,
+    180
+  );
+}
+
+
 function crearPadreHerencia() {
 
   herenciaPadre = {
 
     x: sk.width / 2,
 
-    y: sk.constrain(
-      sk.height * 0.22,
-      herenciaTamanoPadre / 2 + 15,
-      180
-    ),
+    y: calcularYPadreHerencia(),
 
     tamano: herenciaTamanoPadre
   };
@@ -1781,6 +1795,89 @@ function crearHerederosHerencia() {
 
 
 // =====================================================
+// ESCALA SEGUN CERCANIA AL PADRE
+// (el heredero agarrado crece a medida que se acerca)
+// =====================================================
+
+function actualizarEscalaHerederosHerencia() {
+
+  for (
+    var i = 0;
+    i < herenciaHerederos.length;
+    i++
+  ) {
+
+    var h =
+      herenciaHerederos[i];
+
+
+    if (
+      herenciaArrastrando &&
+      h === herenciaSeleccionado &&
+      herenciaPadre !== null
+    ) {
+
+      var distanciaActual =
+        sk.dist(
+          h.x,
+          h.y,
+          herenciaPadre.x,
+          herenciaPadre.y
+        );
+
+
+      var distanciaInicial =
+        sk.dist(
+          h.posicionFinalX,
+          h.posicionFinalY,
+          herenciaPadre.x,
+          herenciaPadre.y
+        );
+
+
+      var proximidad =
+        distanciaInicial > 0
+          ? 1 -
+            sk.constrain(
+              distanciaActual /
+              distanciaInicial,
+              0,
+              1
+            )
+          : 0;
+
+
+      var escalaObjetivo =
+        sk.lerp(
+          1,
+          1.6,
+          proximidad
+        );
+
+
+      h.escala =
+        sk.lerp(
+          h.escala,
+          escalaObjetivo,
+          0.35
+        );
+
+    }
+
+    else {
+
+      h.escala =
+        sk.lerp(
+          h.escala,
+          1,
+          0.2
+        );
+    }
+  }
+}
+
+
+// =====================================================
 // COLISION CON EL PADRE
 // (se pisa el circulo padre en si, no su aura de particulas)
 // =====================================================
@@ -1840,6 +1937,10 @@ function comenzarSalidaHerencia() {
     sk.millis();
 
 
+  herenciaPadreYInicio =
+    herenciaPadre.y;
+
+
   herenciaSeleccionado.elegido =
     true;
 
@@ -1884,7 +1985,7 @@ function actualizarSalidaHerencia() {
 
   herenciaPadre.y =
     sk.lerp(
-      180,
+      herenciaPadreYInicio,
       -220,
       suave
     );
@@ -1992,7 +2093,7 @@ function actualizarHerenciaHerencia() {
   elegido.y =
     sk.lerp(
       elegido.y,
-      180,
+      calcularYPadreHerencia(),
       suave
     );
 
@@ -2038,17 +2139,23 @@ function actualizarHerenciaHerencia() {
 
       x: sk.width / 2,
 
-      y: sk.constrain(
-        sk.height * 0.22,
-        herenciaTamanoPadre / 2 + 15,
-        180
-      ),
+      y: calcularYPadreHerencia(),
 
       tamano: herenciaTamanoPadre
     };
 
 
     crearParticulasDelPadre();
+
+
+    herenciaSeleccionado =
+      null;
+
+    herenciaArrastrando =
+      false;
+
+    herenciaTouchID =
+      -1;
 
 
     herenciaEstado =
@@ -2698,11 +2805,7 @@ sk.windowResized = function() {
       sk.width / 2;
 
     herenciaPadre.y =
-      sk.constrain(
-        sk.height * 0.22,
-        herenciaTamanoPadre / 2 + 15,
-        180
-      );
+      calcularYPadreHerencia();
 
     crearParticulasDelPadre();
   }
