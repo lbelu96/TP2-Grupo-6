@@ -1464,6 +1464,23 @@ sk.draw = function() {
   actualizarTouchHerencia();
 
 
+  // -----------------------------------------------------
+  // RED DE SEGURIDAD:
+  // ninguna fase de transición (salida/herencia/nuevos) debería
+  // durar más de ~1.2s. Si por algún motivo (rendimiento, un
+  // toque perdido, etc.) queda trabada mucho más que eso, forzamos
+  // un reinicio limpio para que el usuario pueda seguir probando.
+  // -----------------------------------------------------
+
+  if (
+    herenciaEstado !== "jugando" &&
+    sk.millis() - herenciaTiempoEstado > 6000
+  ) {
+
+    iniciarHerencia();
+  }
+
+
   if (
     herenciaEstado === "jugando"
   ) {
@@ -1886,6 +1903,14 @@ function comprobarColisionParticulasHerencia() {
 
   if (
     herenciaSeleccionado === null
+  ) {
+
+    return;
+  }
+
+
+  if (
+    !herenciaArrastrando
   ) {
 
     return;
@@ -2757,6 +2782,13 @@ sk.touchEnded = function() {
     herenciaArrastrando = false;
 
     herenciaTouchID = -1;
+
+    if (
+      herenciaEstado === "jugando"
+    ) {
+
+      herenciaSeleccionado = null;
+    }
 
   }
 
