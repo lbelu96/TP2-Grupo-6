@@ -1555,7 +1555,11 @@ function crearPadreHerencia() {
 
     x: sk.width / 2,
 
-    y: 180,
+    y: sk.constrain(
+      sk.height * 0.22,
+      herenciaTamanoPadre / 2 + 15,
+      180
+    ),
 
     tamano: herenciaTamanoPadre
   };
@@ -1777,7 +1781,8 @@ function crearHerederosHerencia() {
 
 
 // =====================================================
-// COLISION CON PARTICULAS
+// COLISION CON EL PADRE
+// (se pisa el circulo padre en si, no su aura de particulas)
 // =====================================================
 
 function comprobarColisionParticulasHerencia() {
@@ -1798,37 +1803,25 @@ function comprobarColisionParticulasHerencia() {
   }
 
 
-  for (
-    var i = 0;
-    i < herenciaParticulas.length;
-    i++
+  var distancia =
+    sk.dist(
+      herenciaSeleccionado.x,
+      herenciaSeleccionado.y,
+      herenciaPadre.x,
+      herenciaPadre.y
+    );
+
+
+  if (
+    distancia <
+    herenciaSeleccionado.tamano *
+    herenciaSeleccionado.escala /
+    2 +
+    herenciaPadre.tamano /
+    2
   ) {
 
-    var p =
-      herenciaParticulas[i];
-
-
-    var distancia =
-      sk.dist(
-        herenciaSeleccionado.x,
-        herenciaSeleccionado.y,
-        p.x,
-        p.y
-      );
-
-
-    if (
-      distancia <
-      herenciaSeleccionado.tamano *
-      herenciaSeleccionado.escala /
-      2 +
-      p.tamano
-    ) {
-
-      comenzarSalidaHerencia();
-
-      return;
-    }
+    comenzarSalidaHerencia();
   }
 }
 
@@ -2045,7 +2038,11 @@ function actualizarHerenciaHerencia() {
 
       x: sk.width / 2,
 
-      y: 180,
+      y: sk.constrain(
+        sk.height * 0.22,
+        herenciaTamanoPadre / 2 + 15,
+        180
+      ),
 
       tamano: herenciaTamanoPadre
     };
@@ -2691,6 +2688,24 @@ sk.windowResized = function() {
 
 
   crearParticulasFondoHerencia();
+
+
+  if (
+    herenciaPadre
+  ) {
+
+    herenciaPadre.x =
+      sk.width / 2;
+
+    herenciaPadre.y =
+      sk.constrain(
+        sk.height * 0.22,
+        herenciaTamanoPadre / 2 + 15,
+        180
+      );
+
+    crearParticulasDelPadre();
+  }
 
 
   if (
